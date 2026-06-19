@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Resource Details — DRP</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --brand:       #534AB7;
+      --brand-light: #EEEDFE;
+      --brand-dark:  #3C3489;
+      --bg:          #ffffff;
+      --bg-2:        #F7F6F3;
+      --bg-3:        #F1EFE8;
+      --text:        #1a1a18;
+      --muted:       #5f5e5a;
+      --hint:        #888780;
+      --border:      rgba(0,0,0,0.09);
+      --border-med:  rgba(0,0,0,0.16);
+      --radius:      8px;
+      --radius-lg:   12px;
+      --font:        -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+
+    body { font-family: var(--font); background: var(--bg-2); color: var(--text); min-height: 100vh; }
+    a { color: var(--brand); text-decoration: none; }
+
+    /* ── NAVBAR (same as browse.html) ── */
+    .navbar { height:56px; background:var(--bg); border-bottom:0.5px solid var(--border); position:sticky; top:0; z-index:100; }
+    .nav-inner { max-width:1100px; margin:0 auto; padding:0 1.5rem; height:100%; display:flex; align-items:center; gap:1.5rem; }
+    .brand { display:flex; align-items:center; gap:0.5rem; font-weight:700; font-size:0.95rem; color:var(--text); text-decoration:none; }
+    .brand-icon { width:28px; height:28px; background:var(--brand); border-radius:6px; display:flex; align-items:center; justify-content:center; color:#fff; font-size:0.75rem; font-weight:800; }
+    .nav-links { display:flex; gap:0.25rem; list-style:none; }
+    .nav-links a { display:block; padding:0.35rem 0.75rem; border-radius:var(--radius); font-size:0.875rem; color:var(--muted); text-decoration:none; transition:background 0.15s,color 0.15s; }
+    .nav-links a:hover, .nav-links a.active { background:var(--bg-2); color:var(--text); }
+    .nav-right { margin-left:auto; display:flex; align-items:center; gap:0.75rem; }
+    .user-pill { display:flex; align-items:center; gap:0.5rem; padding:0.25rem 0.65rem 0.25rem 0.3rem; border-radius:99px; border:0.5px solid var(--border-med); background:var(--bg-2); font-size:0.8rem; color:var(--muted); cursor:pointer; }
+    .user-pill:hover { background:var(--bg-3); }
+    .avatar { width:24px; height:24px; border-radius:50%; background:var(--brand-light); color:var(--brand-dark); font-size:0.7rem; font-weight:700; display:flex; align-items:center; justify-content:center; text-transform:uppercase; }
+    .dropdown { position:relative; }
+    .dropdown-menu { display:none; position:absolute; right:0; top:calc(100% + 6px); background:var(--bg); border:0.5px solid var(--border-med); border-radius:var(--radius-lg); box-shadow:0 4px 16px rgba(0,0,0,0.1); min-width:160px; overflow:hidden; z-index:200; }
+    .dropdown-menu.open { display:block; }
+    .dropdown-menu a, .dropdown-menu button { display:flex; align-items:center; gap:0.5rem; width:100%; padding:0.6rem 1rem; font-size:0.875rem; color:var(--text); background:none; border:none; cursor:pointer; text-align:left; text-decoration:none; transition:background 0.1s; font-family:var(--font); }
+    .dropdown-menu a:hover, .dropdown-menu button:hover { background:var(--bg-2); }
+    .dropdown-menu hr { border:none; border-top:0.5px solid var(--border); margin:0.25rem 0; }
+    .dropdown-menu .danger { color:#A32D2D; }
+    .btn { display:inline-flex; align-items:center; gap:0.4rem; padding:0.45rem 1rem; font-size:0.875rem; font-weight:500; font-family:var(--font); border-radius:var(--radius); border:0.5px solid transparent; cursor:pointer; text-decoration:none; transition:background 0.15s,transform 0.1s; white-space:nowrap; }
+    .btn:active { transform: scale(0.98); }
+    .btn-primary { background:var(--brand); color:#fff; }
+    .btn-primary:hover { background:var(--brand-dark); }
+    .btn-secondary { background:var(--bg); color:var(--text); border-color:var(--border-med); }
+    .btn-secondary:hover { background:var(--bg-2); }
+    .btn-danger { background:#FCEBEB; color:#A32D2D; }
+    .btn-danger:hover { background:#F7C1C1; }
+    .btn-sm { padding:0.3rem 0.7rem; font-size:0.8rem; }
+
+    /* ── STATUS BANNER ── */
+    .status-banner { padding:0.6rem 1.5rem; font-size:0.82rem; display:flex; align-items:center; gap:0.6rem; font-weight:500; }
+    .status-banner.warn { background:#FAEEDA; color:#854F0B; }
+    .status-banner.hidden { display:none; }
+    .status-dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; background:#EF9F27; }
+
+    /* ── PAGE LAYOUT ── */
+    .page-wrap { max-width: 820px; margin: 0 auto; padding: 1.75rem 1.5rem 4rem; }
+
+    /* Back link */
+    .back-link {
+      display: inline-flex; align-items: center; gap: 0.4rem;
+      font-size: 0.85rem; color: var(--muted);
+      margin-bottom: 1.25rem; text-decoration: none;
+      transition: color 0.15s;
+    }
+    .back-link:hover { color: var(--brand); }
+
+    /* ── DETAIL CARD ── */
+    .detail-card {
+      background: var(--bg);
+      border: 0.5px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+    }
+
+    /* Top colored header strip based on file type */
+    .detail-header {
+      padding: 1.75rem 2rem;
+      border-bottom: 0.5px solid var(--border);
+    }
+
+    .detail-top-row {
+      display: flex; align-items: flex-start; justify-content: space-between;
+      gap: 1rem; margin-bottom: 1rem;
+    }
+
+    /* File icon box */
+    .file-icon-box {
+      width: 52px; height: 52px; border-radius: var(--radius-lg);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; font-size: 0.8rem; font-weight: 700;
+      text-transform: uppercase;
+    }
+    .icon-pdf  { background:#FCEBEB; color:#A32D2D; }
+    .icon-doc  { background:#E6F1FB; color:#185FA5; }
+    .icon-txt  { background:#F1EFE8; color:#5f5e5a; }
+    .icon-img  { background:#EAF3DE; color:#3B6D11; }
+    .icon-file { background:var(--brand-light); color:var(--brand-dark); }
+
+    .detail-title-block { flex: 1; min-width: 0; }
+
+    .detail-title {
+      font-size: 1.4rem; font-weight: 700; line-height: 1.3;
+      margin-bottom: 0.4rem; word-break: break-word;
+    }
+
+    .detail-meta {
+      display: flex; align-items: center; gap: 0.5rem;
+      font-size: 0.82rem; color: var(--muted); flex-wrap: wrap;
+    }
+
+    .meta-dot { width: 3px; height: 3px; border-radius: 50%; background: var(--hint); }
+
+    /* Category tag */
+    .cat-tag {
+      display: inline-block; padding: 0.2rem 0.65rem;
+      background: var(--brand-light); color: var(--brand-dark);
+      border-radius: 99px; font-size: 0.75rem; font-weight: 500;
+    }
+
+    /* Action buttons row */
+    .action-row {
+      display: flex; gap: 0.6rem; flex-wrap: wrap;
+    }
+
+    /* ── BODY: description, tags, file info ── */
+    .detail-body { padding: 1.75rem 2rem; }
+
+    .section { margin-bottom: 1.75rem; }
+    .section:last-child { margin-bottom: 0; }
+
+    .section-label {
+      font-size: 0.75rem; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.06em; color: var(--hint); margin-bottom: 0.6rem;
+    }
+
+    .description-text {
+      font-size: 0.92rem; line-height: 1.7; color: var(--text);
+      white-space: pre-wrap;   /* preserve line breaks from the original text */
+    }
+
+    .no-description { color: var(--hint); font-size: 0.875rem; font-style: italic; }
+
+    /* Tag chips */
+    .tags-row { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+    .tag-chip {
+      padding: 0.25rem 0.7rem; background: var(--bg-2);
+      border: 0.5px solid var(--border); border-radius: 99px;
+      font-size: 0.78rem; color: var(--muted);
+    }
+
+    /* File info grid */
+    .info-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 1rem;
+    }
+
+    .info-item { display: flex; flex-direction: column; gap: 0.2rem; }
+    .info-label { font-size: 0.72rem; color: var(--hint); text-transform: uppercase; letter-spacing: 0.04em; }
+    .info-value { font-size: 0.9rem; color: var(--text); font-weight: 500; }
+
+    /* Uploader card */
+    .uploader-card {
+      display: flex; align-items: center; gap: 0.75rem;
+      padding: 0.85rem 1rem; background: var(--bg-2);
+      border-radius: var(--radius); border: 0.5px solid var(--border);
+    }
+    .uploader-avatar-lg {
+      width: 38px; height: 38px; border-radius: 50%;
+      background: var(--brand-light); color: var(--brand-dark);
+      font-size: 0.95rem; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      text-transform: uppercase; flex-shrink: 0;
+    }
+    .uploader-name { font-size: 0.9rem; font-weight: 600; }
+    .uploader-sub  { font-size: 0.78rem; color: var(--hint); }
+
+    /* ── EDIT FORM (hidden by default) ── */
+    .edit-form { display: none; }
+    .edit-form.show { display: block; }
+    .detail-body.editing .view-mode { display: none; }
+
+    .form-group { display: flex; flex-direction: column; gap: 0.375rem; margin-bottom: 1rem; }
+    label { font-size: 0.85rem; font-weight: 500; color: var(--text); }
+    .form-hint { font-size: 0.75rem; color: var(--hint); margin-top: 0.15rem; }
+
+    input[type="text"], select, textarea {
+      width: 100%; padding: 0.5rem 0.75rem; font-size: 0.875rem;
+      font-family: var(--font); color: var(--text); background: var(--bg);
+      border: 0.5px solid var(--border-med); border-radius: var(--radius);
+      outline: none; transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    input:focus, select:focus, textarea:focus {
+      border-color: var(--brand); box-shadow: 0 0 0 3px rgba(83,74,183,0.12);
+    }
+    textarea { resize: vertical; min-height: 90px; font-family: var(--font); line-height: 1.5; }
+    select { cursor: pointer; }
+
+    .form-actions { display: flex; gap: 0.6rem; margin-top: 1.25rem; }
+
+    /* ── DELETE CONFIRM MODAL ── */
+    .modal-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.4); z-index: 1000;
+      align-items: center; justify-content: center;
+    }
+    .modal-overlay.show { display: flex; }
+
+    .modal-box {
+      background: var(--bg); border-radius: var(--radius-lg);
+      padding: 1.75rem; max-width: 380px; width: 90%;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+      animation: modal-in 0.2s ease;
+    }
+    @keyframes modal-in { from{opacity:0;transform:scale(0.96)} to{opacity:1;transform:scale(1)} }
+
+    .modal-box h3 { font-size: 1.05rem; margin-bottom: 0.5rem; }
+    .modal-box p  { font-size: 0.875rem; color: var(--muted); line-height: 1.5; margin-bottom: 1.5rem; }
+    .modal-actions { display: flex; gap: 0.6rem; justify-content: flex-end; }
+
+    /* ── LOADING / ERROR STATES ── */
+    .loading-center { display: flex; flex-direction: column; align-items: center; gap: 1rem; padding: 5rem 2rem; color: var(--muted); }
+    .spinner { width: 28px; height: 28px; border: 2.5px solid var(--border-med); border-top-color: var(--brand); border-radius: 50%; animation: spin 0.6s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .error-box {
+      text-align: center; padding: 4rem 2rem; color: var(--muted);
+    }
+    .error-box .icon { font-size: 2.5rem; margin-bottom: 1rem; opacity: 0.4; }
+    .error-box h3 { font-size: 1.05rem; color: var(--text); margin-bottom: 0.5rem; }
+
+    /* ── TOAST ── */
+    #toast-container { position:fixed; bottom:1.5rem; right:1.5rem; display:flex; flex-direction:column; gap:0.5rem; z-index:9999; }
+    .toast { display:flex; align-items:center; gap:0.6rem; padding:0.75rem 1rem; border-radius:var(--radius); font-size:0.875rem; font-weight:500; box-shadow:0 4px 12px rgba(0,0,0,0.12); animation:toast-in 0.2s ease; max-width:300px; }
+    @keyframes toast-in { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+    .toast-success { background:#EAF3DE; color:#3B6D11; }
+    .toast-error   { background:#FCEBEB; color:#A32D2D; }
+    .toast-info    { background:#E6F1FB; color:#185FA5; }
+
+    .hidden { display: none !important; }
+
+    @media (max-width: 600px) {
+      .detail-header, .detail-body { padding: 1.25rem; }
+      .detail-title { font-size: 1.15rem; }
+      .action-row { width: 100%; }
+      .action-row .btn { flex: 1; justify-content: center; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ── STATUS BANNER (shown if backend unreachable) ── -->
+  <div class="status-banner hidden" id="status-banner">
+    <div class="status-dot"></div>
+    <span id="status-msg"></span>
+  </div>
+
+  <!-- ── NAVBAR ── -->
+  <nav class="navbar">
+    <div class="nav-inner">
+      <a href="browse.html" class="brand">
+        <div class="brand-icon">DR</div>
+        DRP
+      </a>
+      <ul class="nav-links">
+        <li><a href="browse.html">Browse</a></li>
+        <li id="nav-upload" class="hidden"><a href="upload.html">Upload</a></li>
+        <li id="nav-admin-users" class="hidden"><a href="admin/users.html">Users</a></li>
+        <li id="nav-admin-cats"  class="hidden"><a href="admin/categories.html">Categories</a></li>
+        <li id="nav-admin-logs"  class="hidden"><a href="admin/logs.html">Logs</a></li>
+      </ul>
+      <div class="nav-right">
+        <a href="login.html" class="btn btn-primary btn-sm" id="nav-login">Sign in</a>
+        <div class="dropdown hidden" id="nav-user">
+          <div class="user-pill" onclick="toggleDropdown()">
+            <div class="avatar" id="nav-avatar">?</div>
+            <span id="nav-username">User</span>
+            <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div class="dropdown-menu" id="user-dropdown">
+            <a href="profile.html">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="5" r="3" stroke="currentColor" stroke-width="1.2"/><path d="M2 14c0-3.3 2.7-6 6-6s6 2.7 6 6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+              My Profile
+            </a>
+            <a href="upload.html">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M8 2v9M5 5l3-3 3 3M3 13h10" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              Upload Resource
+            </a>
+            <hr>
+            <button class="danger" onclick="logout()">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M10 2H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h6M11 5l3 3-3 3M7 8h7" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              Sign out
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ── PAGE CONTENT ── -->
+  <div class="page-wrap">
+
+    <a href="browse.html" class="back-link">
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M10 3L5 8l5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Back to Browse
+    </a>
+
+    <!-- LOADING STATE — shown first while we fetch the resource -->
+    <div id="loading-state" class="detail-card">
+      <div class="loading-center">
+        <div class="spinner"></div>
+        <p>Loading resource…</p>
+      </div>
+    </div>
+
+    <!-- ERROR STATE — shown if the resource doesn't exist -->
+    <div id="error-state" class="detail-card hidden">
+      <div class="error-box">
+        <div class="icon">⚠️</div>
+        <h3>Resource not found</h3>
+        <p id="error-message" class="text-muted" style="margin-top:0.4rem">This resource may have been deleted or the link is incorrect.</p>
+        <a href="browse.html" class="btn btn-primary" style="margin-top:1.25rem">Back to Browse</a>
+      </div>
+    </div>
+
+    <!-- MAIN CONTENT — filled in by JS once data loads -->
+    <div id="detail-card" class="detail-card hidden">
+
+      <!-- Header: icon, title, meta, action buttons -->
+      <div class="detail-header">
+        <div class="detail-top-row">
+          <div class="file-icon-box" id="file-icon-box">FILE</div>
+          <div class="detail-title-block">
+            <div class="detail-title" id="resource-title">—</div>
+            <div class="detail-meta">
+              <span id="meta-date">—</span>
+              <span class="meta-dot"></span>
+              <span id="meta-size">—</span>
+              <span class="meta-dot"></span>
+              <span id="meta-filename">—</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Action buttons: Download always visible; Edit/Delete only for owner/admin -->
+        <div class="action-row">
+          <button class="btn btn-primary" onclick="downloadFile()">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M8 2v8M5 7l3 3 3-3M3 13h10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Download
+          </button>
+          <button class="btn btn-secondary hidden" id="edit-btn" onclick="toggleEditMode(true)">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M11 2l3 3-8 8H3v-3l8-8z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>
+            Edit
+          </button>
+          <button class="btn btn-danger hidden" id="delete-btn" onclick="showDeleteModal()">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 4h10M6 4V2.5h4V4M5 4l.5 9.5h5L11 4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Delete
+          </button>
+        </div>
+      </div>
+
+      <!-- Body: description, tags, info, uploader -->
+      <div class="detail-body" id="detail-body">
+
+        <!-- ═══ VIEW MODE ═══ -->
+        <div class="view-mode">
+
+          <div class="section">
+            <div class="section-label">Description</div>
+            <div class="description-text" id="resource-description"></div>
+          </div>
+
+          <div class="section" id="tags-section">
+            <div class="section-label">Tags</div>
+            <div class="tags-row" id="tags-row"></div>
+          </div>
+
+          <div class="section">
+            <div class="section-label">File Information</div>
+            <div class="info-grid">
+              <div class="info-item">
+                <span class="info-label">File Type</span>
+                <span class="info-value" id="info-filetype">—</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">File Size</span>
+                <span class="info-value" id="info-filesize">—</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">Category</span>
+                <span class="info-value" id="info-category">—</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">Last Updated</span>
+                <span class="info-value" id="info-updated">—</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="section">
+            <div class="section-label">Uploaded By</div>
+            <div class="uploader-card">
+              <div class="uploader-avatar-lg" id="uploader-avatar">?</div>
+              <div>
+                <div class="uploader-name" id="uploader-name">—</div>
+                <div class="uploader-sub" id="uploader-date">—</div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- ═══ EDIT MODE (hidden until "Edit" is clicked) ═══ -->
+        <form class="edit-form" id="edit-form">
+
+          <div class="form-group">
+            <label for="edit-title">Title</label>
+            <input type="text" id="edit-title" maxlength="200" required>
+          </div>
+
+          <div class="form-group">
+            <label for="edit-description">Description</label>
+            <textarea id="edit-description" maxlength="1000"></textarea>
+          </div>
+
+          <div class="form-group">
+            <label for="edit-tags">Tags</label>
+            <input type="text" id="edit-tags" maxlength="500" placeholder="comma, separated, tags">
+            <span class="form-hint">Separate tags with commas — used for search.</span>
+          </div>
+
+          <div class="form-group">
+            <label for="edit-category">Category</label>
+            <select id="edit-category">
+              <option value="">No category</option>
+              <!-- options filled by JS -->
+            </select>
+          </div>
+
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary" id="save-btn">Save changes</button>
+            <button type="button" class="btn btn-secondary" onclick="toggleEditMode(false)">Cancel</button>
+          </div>
+
+        </form>
+
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── DELETE CONFIRMATION MODAL ── -->
+  <div class="modal-overlay" id="delete-modal">
+    <div class="modal-box">
+      <h3>Delete this resource?</h3>
+      <p>This will permanently remove <strong id="delete-resource-title">this resource</strong> and its file. This action cannot be undone.</p>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="hideDeleteModal()">Cancel</button>
+        <button class="btn btn-danger" onclick="confirmDelete()" id="confirm-delete-btn">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast-container"></div>
+
+  <script>
+    /* ==========================================================
+       CONFIGURATION
+    ========================================================== */
+    const API_BASE = 'http://localhost:8080/api/v1';
+
+    /* ==========================================================
+       MOCK DATA — used if backend is unreachable.
+       Matches the same resources shown in browse.html's mock data.
+    ========================================================== */
+    const MOCK_RESOURCES = {
+      1: { id:1, title:'Q1 Financial Report 2026', description:'Quarterly financial summary including revenue, expenses and projections for the upcoming year. Includes breakdowns by department and regional performance.', fileName:'q1-report.pdf', fileType:'application/pdf', fileSize:204800, tags:'finance,report,2026', uploadedById:1, uploadedByUsername:'admin', categoryId:2, categoryName:'Reports', createdAt:'2026-03-01T10:00:00', updatedAt:'2026-03-02T09:15:00' },
+      2: { id:2, title:'Machine Learning Research Paper', description:'A study on transformer architectures and attention mechanisms in NLP, covering recent advances in self-attention and positional encoding strategies.', fileName:'ml-paper.pdf', fileType:'application/pdf', fileSize:512000, tags:'AI,ML,NLP', uploadedById:2, uploadedByUsername:'alice', categoryId:1, categoryName:'Research Papers', createdAt:'2026-02-15T09:30:00', updatedAt:'2026-02-15T09:30:00' },
+      3: { id:3, title:'Project Kickoff Presentation', description:'Slides for the new product launch kickoff meeting, including timeline, team responsibilities and budget overview.', fileName:'kickoff.docx', fileType:'application/vnd.openxmlformats-officedocument.wordprocessingml.document', fileSize:98304, tags:'project,presentation', uploadedById:3, uploadedByUsername:'bob', categoryId:3, categoryName:'Presentations', createdAt:'2026-01-20T14:00:00', updatedAt:'2026-01-21T10:00:00' },
+      4: { id:4, title:'Employee Handbook 2026', description:'Updated HR policies, leave rules and code of conduct for all employees effective from January 2026.', fileName:'handbook.pdf', fileType:'application/pdf', fileSize:307200, tags:'HR,policy', uploadedById:1, uploadedByUsername:'admin', categoryId:4, categoryName:'General Documents', createdAt:'2026-01-05T08:00:00', updatedAt:'2026-01-05T08:00:00' },
+      5: { id:5, title:'Database Design Notes', description:'Notes on normalisation, indexing and query optimisation for relational databases.', fileName:'db-notes.txt', fileType:'text/plain', fileSize:15360, tags:'database,SQL', uploadedById:2, uploadedByUsername:'alice', categoryId:1, categoryName:'Research Papers', createdAt:'2025-12-10T11:00:00', updatedAt:'2025-12-10T11:00:00' },
+      6: { id:6, title:'Brand Logo Assets', description:'', fileName:'logos.png', fileType:'image/png', fileSize:2097152, tags:'design,brand,logo', uploadedById:3, uploadedByUsername:'bob', categoryId:4, categoryName:'General Documents', createdAt:'2025-11-22T16:00:00', updatedAt:'2025-11-22T16:00:00' },
+    };
+
+    const MOCK_CATEGORIES = [
+      { id: 1, name: 'Research Papers' },
+      { id: 2, name: 'Reports' },
+      { id: 3, name: 'Presentations' },
+      { id: 4, name: 'General Documents' },
+    ];
+
+    /* ==========================================================
+       STATE
+    ========================================================== */
+    let resource  = null;   // holds the loaded resource data
+    let usingMock = false;
+
+    /* Get the resource ID from the URL, e.g. resource.html?id=3 */
+    const urlParams = new URLSearchParams(window.location.search);
+    const resourceId = urlParams.get('id');
+
+    /* ==========================================================
+       SESSION HELPERS
+    ========================================================== */
+    function getToken()   { return localStorage.getItem('drp_token'); }
+    function getUser()    { const r = localStorage.getItem('drp_user'); return r ? JSON.parse(r) : null; }
+    function isLoggedIn() { return !!getToken(); }
+    function logout() {
+      localStorage.removeItem('drp_token');
+      localStorage.removeItem('drp_user');
+      window.location.href = 'login.html';
+    }
+
+    /* ==========================================================
+       NAVBAR
+    ========================================================== */
+    function setupNavbar() {
+      const user = getUser();
+      if (!user) return;
+      document.getElementById('nav-login').classList.add('hidden');
+      document.getElementById('nav-user').classList.remove('hidden');
+      document.getElementById('nav-upload').classList.remove('hidden');
+      document.getElementById('nav-avatar').textContent = user.username.charAt(0).toUpperCase();
+      document.getElementById('nav-username').textContent = user.username;
+      if (user.role === 'ADMIN') {
+        document.getElementById('nav-admin-users').classList.remove('hidden');
+        document.getElementById('nav-admin-cats').classList.remove('hidden');
+        document.getElementById('nav-admin-logs').classList.remove('hidden');
+      }
+    }
+    function toggleDropdown() { document.getElementById('user-dropdown').classList.toggle('open'); }
+    document.addEventListener('click', function(e) {
+      if (!e.target.closest('.dropdown')) document.getElementById('user-dropdown')?.classList.remove('open');
+    });
+
+    /* ==========================================================
+       TOAST
+    ========================================================== */
+    function showToast(message, type) {
+      type = type || 'info';
+      const el = document.createElement('div');
+      el.className = 'toast toast-' + type;
+      el.textContent = message;
+      document.getElementById('toast-container').appendChild(el);
+      setTimeout(function() {
+        el.style.opacity = '0'; el.style.transition = 'opacity 0.2s';
+        setTimeout(function() { el.remove(); }, 220);
+      }, 3000);
+    }
+
+    function showBanner(message) {
+      const banner = document.getElementById('status-banner');
+      document.getElementById('status-msg').textContent = message;
+      banner.className = 'status-banner warn';
+    }
+    function hideBanner() { document.getElementById('status-banner').classList.add('hidden'); }
+
+    /* ==========================================================
+       API FETCH (with mock fallback)
+    ========================================================== */
+    async function apiFetch(path, options) {
+      options = options || {};
+      const headers = options.headers || { 'Content-Type': 'application/json' };
+      const token = getToken();
+      if (token) headers['Authorization'] = 'Bearer ' + token;
+
+      try {
+        const res  = await fetch(API_BASE + path, Object.assign({}, options, { headers: headers }));
+        const json = await res.json();
+
+        if (res.status === 401) { logout(); throw new Error('Session expired'); }
+        if (!res.ok) throw new Error(json.message || 'Request failed (' + res.status + ')');
+
+        usingMock = false;
+        hideBanner();
+        return json;
+
+      } catch (err) {
+        if (err.message === 'Failed to fetch' || err.name === 'TypeError') {
+          usingMock = true;
+          showBanner('⚠️  Cannot reach backend (localhost:8080). Showing sample data — actions like Save/Delete are disabled in demo mode.');
+          return null;
+        }
+        throw err;
+      }
+    }
+
+    /* ==========================================================
+       LOAD RESOURCE — GET /resources/{id}
+    ========================================================== */
+    async function loadResource() {
+      if (!resourceId) {
+        showError('No resource ID was provided in the URL.');
+        return;
+      }
+
+      const res = await apiFetch('/resources/' + resourceId);
+
+      if (res) {
+        // Real backend response
+        resource = res.data;
+      } else if (MOCK_RESOURCES[resourceId]) {
+        // Mock fallback
+        resource = MOCK_RESOURCES[resourceId];
+      } else {
+        showError('No resource found with ID ' + resourceId + '.');
+        return;
+      }
+
+      renderResource();
+    }
+
+    /* ==========================================================
+       SHOW ERROR STATE
+    ========================================================== */
+    function showError(message) {
+      document.getElementById('loading-state').classList.add('hidden');
+      document.getElementById('error-state').classList.remove('hidden');
+      document.getElementById('error-message').textContent = message;
+    }
+
+    /* ==========================================================
+       RENDER RESOURCE — fills in all the page content
+    ========================================================== */
+    function renderResource() {
+      document.getElementById('loading-state').classList.add('hidden');
+      document.getElementById('detail-card').classList.remove('hidden');
+
+      // ── Title & meta ──
+      document.title = resource.title + ' — DRP';
+      document.getElementById('resource-title').textContent = resource.title;
+
+      const date = new Date(resource.createdAt).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
+      const size = formatFileSize(resource.fileSize);
+
+      document.getElementById('meta-date').textContent = 'Uploaded ' + date;
+      document.getElementById('meta-size').textContent = size;
+      document.getElementById('meta-filename').textContent = resource.fileName;
+
+      // ── File icon box ──
+      const iconBox = document.getElementById('file-icon-box');
+      iconBox.textContent = getTypeLabel(resource.fileType);
+      iconBox.className = 'file-icon-box ' + getIconClass(resource.fileType);
+
+      // ── Description ──
+      const descEl = document.getElementById('resource-description');
+      if (resource.description && resource.description.trim()) {
+        descEl.textContent = resource.description;
+        descEl.classList.remove('no-description');
+      } else {
+        descEl.textContent = 'No description provided.';
+        descEl.classList.add('no-description');
+      }
+
+      // ── Tags ──
+      const tagsSection = document.getElementById('tags-section');
+      const tagsRow = document.getElementById('tags-row');
+      if (resource.tags && resource.tags.trim()) {
+        tagsRow.innerHTML = '';
+        resource.tags.split(',').forEach(function(tag) {
+          tag = tag.trim();
+          if (!tag) return;
+          const chip = document.createElement('span');
+          chip.className = 'tag-chip';
+          chip.textContent = tag;
+          tagsRow.appendChild(chip);
+        });
+        tagsSection.style.display = '';
+      } else {
+        tagsSection.style.display = 'none';
+      }
+
+      // ── File info grid ──
+      document.getElementById('info-filetype').textContent = getTypeLabel(resource.fileType) + ' (' + resource.fileType + ')';
+      document.getElementById('info-filesize').textContent = size;
+      document.getElementById('info-category').textContent = resource.categoryName || 'Uncategorized';
+      document.getElementById('info-updated').textContent = resource.updatedAt
+        ? new Date(resource.updatedAt).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' })
+        : '—';
+
+      // ── Uploader card ──
+      document.getElementById('uploader-avatar').textContent = resource.uploadedByUsername.charAt(0).toUpperCase();
+      document.getElementById('uploader-name').textContent = resource.uploadedByUsername;
+      document.getElementById('uploader-date').textContent = 'Uploaded on ' + date;
+
+      // ── Show Edit/Delete buttons only if user owns this resource OR is admin ──
+      const user = getUser();
+      if (user && (user.userId === resource.uploadedById || user.role === 'ADMIN')) {
+        document.getElementById('edit-btn').classList.remove('hidden');
+        document.getElementById('delete-btn').classList.remove('hidden');
+      }
+
+      // ── Pre-fill the edit form (in case user clicks Edit) ──
+      document.getElementById('edit-title').value = resource.title;
+      document.getElementById('edit-description').value = resource.description || '';
+      document.getElementById('edit-tags').value = resource.tags || '';
+    }
+
+    /* ==========================================================
+       LOAD CATEGORIES FOR EDIT FORM DROPDOWN
+    ========================================================== */
+    async function loadCategoriesForEdit() {
+      const res = await apiFetch('/categories');
+      const categories = res ? res.data : MOCK_CATEGORIES;
+
+      const select = document.getElementById('edit-category');
+      categories.forEach(function(cat) {
+        const opt = document.createElement('option');
+        opt.value = cat.id;
+        opt.textContent = cat.name;
+        select.appendChild(opt);
+      });
+
+      // Set current category as selected (runs after resource loads)
+      if (resource && resource.categoryId) {
+        select.value = resource.categoryId;
+      }
+    }
+
+    /* ==========================================================
+       TOGGLE EDIT MODE
+    ========================================================== */
+    function toggleEditMode(editing) {
+      const body = document.getElementById('detail-body');
+      const form = document.getElementById('edit-form');
+
+      if (editing) {
+        body.classList.add('editing');
+        form.classList.add('show');
+        // Make sure category select has the right value selected
+        if (resource.categoryId) {
+          document.getElementById('edit-category').value = resource.categoryId;
+        }
+      } else {
+        body.classList.remove('editing');
+        form.classList.remove('show');
+      }
+    }
+
+    /* ==========================================================
+       SAVE EDITS — PUT /resources/{id}
+    ========================================================== */
+    document.getElementById('edit-form').addEventListener('submit', async function(e) {
+      e.preventDefault();
+
+      if (usingMock) {
+        showToast('Cannot save changes in demo mode — backend not connected.', 'info');
+        return;
+      }
+
+      const title       = document.getElementById('edit-title').value.trim();
+      const description = document.getElementById('edit-description').value.trim();
+      const tags         = document.getElementById('edit-tags').value.trim();
+      const categoryId   = document.getElementById('edit-category').value;
+
+      if (!title) {
+        showToast('Title is required', 'error');
+        return;
+      }
+
+      const saveBtn = document.getElementById('save-btn');
+      saveBtn.disabled = true;
+      saveBtn.textContent = 'Saving…';
+
+      try {
+        const body = {
+          title: title,
+          description: description,
+          tags: tags,
+          categoryId: categoryId ? Number(categoryId) : null,
+        };
+
+        const res = await fetch(API_BASE + '/resources/' + resourceId, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + getToken(),
+          },
+          body: JSON.stringify(body),
+        });
+
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.message || 'Failed to update resource');
+
+        resource = json.data;
+        renderResource();
+        toggleEditMode(false);
+        showToast('Resource updated successfully!', 'success');
+
+      } catch (err) {
+        showToast('Update failed: ' + err.message, 'error');
+      } finally {
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'Save changes';
+      }
+    });
+
+    /* ==========================================================
+       DELETE — DELETE /resources/{id}
+    ========================================================== */
+    function showDeleteModal() {
+      document.getElementById('delete-resource-title').textContent = '"' + resource.title + '"';
+      document.getElementById('delete-modal').classList.add('show');
+    }
+    function hideDeleteModal() {
+      document.getElementById('delete-modal').classList.remove('show');
+    }
+
+    async function confirmDelete() {
+      if (usingMock) {
+        showToast('Cannot delete in demo mode — backend not connected.', 'info');
+        hideDeleteModal();
+        return;
+      }
+
+      const btn = document.getElementById('confirm-delete-btn');
+      btn.disabled = true;
+      btn.textContent = 'Deleting…';
+
+      try {
+        const res = await fetch(API_BASE + '/resources/' + resourceId, {
+          method: 'DELETE',
+          headers: { 'Authorization': 'Bearer ' + getToken() },
+        });
+
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.message || 'Failed to delete resource');
+
+        showToast('Resource deleted.', 'success');
+        setTimeout(function() { window.location.href = 'browse.html'; }, 800);
+
+      } catch (err) {
+        showToast('Delete failed: ' + err.message, 'error');
+        btn.disabled = false;
+        btn.textContent = 'Delete';
+        hideDeleteModal();
+      }
+    }
+
+    // Close modal when clicking outside the box
+    document.getElementById('delete-modal').addEventListener('click', function(e) {
+      if (e.target === this) hideDeleteModal();
+    });
+
+    /* ==========================================================
+       DOWNLOAD — GET /resources/{id}/download
+    ========================================================== */
+    async function downloadFile() {
+      if (usingMock) { showToast('Download unavailable in demo mode', 'info'); return; }
+
+      showToast('Starting download…', 'info');
+      try {
+        const res = await fetch(API_BASE + '/resources/' + resourceId + '/download', {
+          headers: getToken() ? { 'Authorization': 'Bearer ' + getToken() } : {}
+        });
+        if (!res.ok) throw new Error('Download failed');
+
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = resource.fileName;
+        a.click();
+        URL.revokeObjectURL(url);
+        showToast('Download started!', 'success');
+      } catch (err) {
+        showToast('Download failed: ' + err.message, 'error');
+      }
+    }
+
+    /* ==========================================================
+       HELPERS
+    ========================================================== */
+    function formatFileSize(bytes) {
+      if (bytes < 1024) return bytes + ' B';
+      if (bytes < 1048576) return Math.round(bytes / 1024) + ' KB';
+      return (bytes / 1048576).toFixed(1) + ' MB';
+    }
+
+    function getTypeLabel(m) {
+      return { 'application/pdf':'PDF', 'application/msword':'DOC',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document':'DOCX',
+        'text/plain':'TXT', 'image/jpeg':'JPG', 'image/png':'PNG' }[m] || 'FILE';
+    }
+
+    function getIconClass(m) {
+      if (m === 'application/pdf') return 'icon-pdf';
+      if (m && m.includes('word')) return 'icon-doc';
+      if (m === 'text/plain')      return 'icon-txt';
+      if (m && m.startsWith('image/')) return 'icon-img';
+      return 'icon-file';
+    }
+
+    /* ==========================================================
+       INIT
+    ========================================================== */
+    setupNavbar();
+    loadResource().then(function() {
+      loadCategoriesForEdit();
+    });
+  </script>
+
+</body>
+</html>

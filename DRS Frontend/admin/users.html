@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manage Users — DRP Admin</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --brand:#534AB7; --brand-light:#EEEDFE; --brand-dark:#3C3489;
+      --bg:#ffffff; --bg-2:#F7F6F3; --bg-3:#F1EFE8;
+      --text:#1a1a18; --muted:#5f5e5a; --hint:#888780;
+      --border:rgba(0,0,0,0.09); --border-med:rgba(0,0,0,0.16);
+      --radius:8px; --radius-lg:12px;
+      --font:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+    }
+    body { font-family:var(--font); background:var(--bg-2); color:var(--text); min-height:100vh; }
+    a { color:var(--brand); text-decoration:none; }
+
+    /* NAVBAR */
+    .navbar { height:56px; background:var(--bg); border-bottom:0.5px solid var(--border); position:sticky; top:0; z-index:100; }
+    .nav-inner { max-width:1100px; margin:0 auto; padding:0 1.5rem; height:100%; display:flex; align-items:center; gap:1.5rem; }
+    .brand { display:flex; align-items:center; gap:0.5rem; font-weight:700; font-size:0.95rem; color:var(--text); text-decoration:none; }
+    .brand-icon { width:28px; height:28px; background:var(--brand); border-radius:6px; display:flex; align-items:center; justify-content:center; color:#fff; font-size:0.75rem; font-weight:800; }
+    .nav-links { display:flex; gap:0.25rem; list-style:none; }
+    .nav-links a { display:block; padding:0.35rem 0.75rem; border-radius:var(--radius); font-size:0.875rem; color:var(--muted); text-decoration:none; transition:background 0.15s; }
+    .nav-links a:hover, .nav-links a.active { background:var(--bg-2); color:var(--text); }
+    .nav-right { margin-left:auto; display:flex; align-items:center; gap:0.75rem; }
+    .user-pill { display:flex; align-items:center; gap:0.5rem; padding:0.25rem 0.65rem 0.25rem 0.3rem; border-radius:99px; border:0.5px solid var(--border-med); background:var(--bg-2); font-size:0.8rem; color:var(--muted); cursor:pointer; }
+    .avatar { width:24px; height:24px; border-radius:50%; background:var(--brand-light); color:var(--brand-dark); font-size:0.7rem; font-weight:700; display:flex; align-items:center; justify-content:center; text-transform:uppercase; }
+    .dropdown { position:relative; }
+    .dropdown-menu { display:none; position:absolute; right:0; top:calc(100% + 6px); background:var(--bg); border:0.5px solid var(--border-med); border-radius:var(--radius-lg); box-shadow:0 4px 16px rgba(0,0,0,0.1); min-width:160px; overflow:hidden; z-index:200; }
+    .dropdown-menu.open { display:block; }
+    .dropdown-menu a, .dropdown-menu button { display:flex; align-items:center; gap:0.5rem; width:100%; padding:0.6rem 1rem; font-size:0.875rem; color:var(--text); background:none; border:none; cursor:pointer; text-align:left; text-decoration:none; font-family:var(--font); transition:background 0.1s; }
+    .dropdown-menu a:hover, .dropdown-menu button:hover { background:var(--bg-2); }
+    .dropdown-menu hr { border:none; border-top:0.5px solid var(--border); margin:0.25rem 0; }
+    .danger { color:#A32D2D !important; }
+
+    /* BUTTONS */
+    .btn { display:inline-flex; align-items:center; gap:0.4rem; padding:0.45rem 1rem; font-size:0.875rem; font-weight:500; font-family:var(--font); border-radius:var(--radius); border:0.5px solid transparent; cursor:pointer; text-decoration:none; transition:background 0.15s,transform 0.1s; white-space:nowrap; }
+    .btn:active { transform:scale(0.98); }
+    .btn:disabled { opacity:0.5; cursor:not-allowed; transform:none; }
+    .btn-primary { background:var(--brand); color:#fff; }
+    .btn-primary:hover { background:var(--brand-dark); }
+    .btn-secondary { background:var(--bg); color:var(--text); border-color:var(--border-med); }
+    .btn-secondary:hover { background:var(--bg-2); }
+    .btn-danger { background:#FCEBEB; color:#A32D2D; }
+    .btn-danger:hover { background:#F7C1C1; }
+    .btn-sm { padding:0.28rem 0.65rem; font-size:0.8rem; }
+
+    /* ADMIN BADGE banner */
+    .admin-banner {
+      background: linear-gradient(135deg,#1a1830,#2d2660);
+      padding: 1.25rem 1.5rem;
+    }
+    .admin-banner-inner { max-width:1100px; margin:0 auto; display:flex; align-items:center; gap:1rem; flex-wrap:wrap; justify-content:space-between; }
+    .admin-banner h1 { font-size:1.2rem; font-weight:700; color:#fff; }
+    .admin-banner p  { font-size:0.82rem; color:rgba(255,255,255,0.45); margin-top:0.15rem; }
+    .admin-pill { background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.18); color:rgba(255,255,255,0.8); border-radius:99px; padding:0.2rem 0.75rem; font-size:0.75rem; font-weight:600; }
+
+    /* STATUS BANNER */
+    .status-banner { padding:0.6rem 1.5rem; font-size:0.82rem; display:flex; align-items:center; gap:0.6rem; font-weight:500; }
+    .status-banner.warn { background:#FAEEDA; color:#854F0B; }
+    .status-banner.hidden { display:none; }
+    .status-dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; background:#EF9F27; }
+
+    /* PAGE */
+    .page-wrap { max-width:1100px; margin:0 auto; padding:1.75rem 1.5rem 4rem; }
+    .page-header { display:flex; align-items:center; justify-content:space-between; gap:1rem; margin-bottom:1.25rem; flex-wrap:wrap; }
+    .page-header h2 { font-size:1.1rem; font-weight:600; }
+    .search-input { padding:0.45rem 0.75rem; border:0.5px solid var(--border-med); border-radius:var(--radius); font-size:0.875rem; font-family:var(--font); outline:none; width:220px; }
+    .search-input:focus { border-color:var(--brand); }
+
+    /* TABLE */
+    .table-wrap { background:var(--bg); border:0.5px solid var(--border); border-radius:var(--radius-lg); overflow:hidden; }
+    table { width:100%; border-collapse:collapse; font-size:0.875rem; }
+    thead th { padding:0.7rem 1rem; text-align:left; font-weight:500; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; color:var(--hint); background:var(--bg-2); border-bottom:0.5px solid var(--border); }
+    tbody td { padding:0.75rem 1rem; border-bottom:0.5px solid var(--border); vertical-align:middle; }
+    tbody tr:last-child td { border-bottom:none; }
+    tbody tr:hover td { background:var(--bg-2); }
+
+    .user-cell { display:flex; align-items:center; gap:0.65rem; }
+    .u-avatar { width:30px; height:30px; border-radius:50%; background:var(--brand-light); color:var(--brand-dark); font-size:0.75rem; font-weight:700; display:flex; align-items:center; justify-content:center; text-transform:uppercase; flex-shrink:0; }
+    .u-name { font-weight:500; }
+    .u-email { font-size:0.78rem; color:var(--hint); }
+
+    .badge { display:inline-flex; padding:0.18rem 0.55rem; font-size:0.7rem; font-weight:600; border-radius:99px; text-transform:uppercase; letter-spacing:0.03em; }
+    .badge-admin   { background:var(--brand-light); color:var(--brand-dark); }
+    .badge-user    { background:var(--bg-3); color:var(--muted); }
+    .badge-active  { background:#EAF3DE; color:#3B6D11; }
+    .badge-inactive{ background:#FCEBEB; color:#A32D2D; }
+
+    .row-actions { display:flex; gap:0.4rem; justify-content:flex-end; }
+    .icon-btn { width:30px; height:30px; border-radius:var(--radius); border:0.5px solid var(--border-med); background:var(--bg-2); display:flex; align-items:center; justify-content:center; cursor:pointer; color:var(--muted); transition:background 0.1s,color 0.1s; }
+    .icon-btn:hover { background:var(--brand-light); color:var(--brand-dark); }
+    .icon-btn.del:hover { background:#FCEBEB; color:#A32D2D; }
+
+    /* SKELETON */
+    .skeleton-line { height:14px; background:var(--bg-3); border-radius:4px; animation:pulse 1.4s ease-in-out infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.45} }
+
+    /* EMPTY */
+    .empty { text-align:center; padding:3rem; color:var(--muted); }
+    .empty-icon { font-size:2rem; opacity:0.3; margin-bottom:0.75rem; }
+
+    /* MODAL */
+    .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:1000; align-items:center; justify-content:center; padding:1rem; }
+    .modal-overlay.show { display:flex; }
+    .modal-box { background:var(--bg); border-radius:var(--radius-lg); padding:1.75rem; max-width:420px; width:100%; box-shadow:0 8px 32px rgba(0,0,0,0.2); animation:modal-in 0.2s ease; }
+    @keyframes modal-in { from{opacity:0;transform:scale(0.96)} to{opacity:1;transform:scale(1)} }
+    .modal-box h3 { font-size:1.05rem; margin-bottom:1.25rem; }
+    .modal-actions { display:flex; gap:0.6rem; justify-content:flex-end; margin-top:1.25rem; }
+    .form-group { display:flex; flex-direction:column; gap:0.35rem; margin-bottom:1rem; }
+    .form-group label { font-size:0.85rem; font-weight:500; }
+    .form-group input, .form-group select {
+      padding:0.5rem 0.75rem; border:0.5px solid var(--border-med);
+      border-radius:var(--radius); font-size:0.875rem; font-family:var(--font);
+      outline:none; transition:border-color 0.15s,box-shadow 0.15s;
+    }
+    .form-group input:focus, .form-group select:focus { border-color:var(--brand); box-shadow:0 0 0 3px rgba(83,74,183,0.12); }
+    .form-hint { font-size:0.75rem; color:var(--hint); }
+    .field-error { display:none; font-size:0.75rem; color:#A32D2D; }
+    .field-error.show { display:block; }
+
+    /* TOAST */
+    #toast-container { position:fixed; bottom:1.5rem; right:1.5rem; display:flex; flex-direction:column; gap:0.5rem; z-index:9999; }
+    .toast { display:flex; align-items:center; gap:0.6rem; padding:0.75rem 1rem; border-radius:var(--radius); font-size:0.875rem; font-weight:500; box-shadow:0 4px 12px rgba(0,0,0,0.12); animation:toast-in 0.2s ease; max-width:300px; }
+    @keyframes toast-in { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+    .toast-success { background:#EAF3DE; color:#3B6D11; }
+    .toast-error   { background:#FCEBEB; color:#A32D2D; }
+    .toast-info    { background:#E6F1FB; color:#185FA5; }
+
+    .hidden { display:none !important; }
+    @media(max-width:700px){ .table-wrap{overflow-x:auto} table{min-width:600px} }
+  </style>
+</head>
+<body>
+
+  <div class="status-banner hidden" id="status-banner">
+    <div class="status-dot"></div>
+    <span id="status-msg"></span>
+  </div>
+
+  <!-- NAVBAR -->
+  <nav class="navbar">
+    <div class="nav-inner">
+      <a href="../browse.html" class="brand"><div class="brand-icon">DR</div>DRP</a>
+      <ul class="nav-links">
+        <li><a href="../browse.html">Browse</a></li>
+        <li><a href="../upload.html">Upload</a></li>
+        <li><a href="users.html" class="active">Users</a></li>
+        <li><a href="categories.html">Categories</a></li>
+        <li><a href="logs.html">Logs</a></li>
+      </ul>
+      <div class="nav-right">
+        <div class="dropdown">
+          <div class="user-pill" onclick="toggleDropdown()">
+            <div class="avatar" id="nav-avatar">A</div>
+            <span id="nav-username">Admin</span>
+            <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div class="dropdown-menu" id="user-dropdown">
+            <a href="../profile.html">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="5" r="3" stroke="currentColor" stroke-width="1.2"/><path d="M2 14c0-3.3 2.7-6 6-6s6 2.7 6 6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+              My Profile
+            </a>
+            <hr>
+            <button class="danger" onclick="logout()">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M10 2H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h6M11 5l3 3-3 3M7 8h7" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              Sign out
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ADMIN BANNER -->
+  <div class="admin-banner">
+    <div class="admin-banner-inner">
+      <div>
+        <h1>User Management</h1>
+        <p>Create, update and deactivate platform users</p>
+      </div>
+      <span class="admin-pill">Admin Panel</span>
+    </div>
+  </div>
+
+  <div class="page-wrap">
+    <div class="page-header">
+      <h2 id="user-count">Users</h2>
+      <div style="display:flex;gap:0.6rem;align-items:center;flex-wrap:wrap;">
+        <input class="search-input" type="search" id="search-input" placeholder="Search username or email…" oninput="filterTable()">
+        <button class="btn btn-primary btn-sm" onclick="openCreateModal()">
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M8 2v12M2 8h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          New User
+        </button>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>User</th>
+            <th>Role</th>
+            <th>Status</th>
+            <th>Joined</th>
+            <th style="text-align:right">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="users-tbody">
+          <tr><td><div class="skeleton-line" style="width:50%"></div></td><td><div class="skeleton-line" style="width:40%"></div></td><td><div class="skeleton-line" style="width:40%"></div></td><td><div class="skeleton-line" style="width:50%"></div></td><td></td></tr>
+          <tr><td><div class="skeleton-line" style="width:60%"></div></td><td><div class="skeleton-line" style="width:35%"></div></td><td><div class="skeleton-line" style="width:40%"></div></td><td><div class="skeleton-line" style="width:45%"></div></td><td></td></tr>
+          <tr><td><div class="skeleton-line" style="width:45%"></div></td><td><div class="skeleton-line" style="width:40%"></div></td><td><div class="skeleton-line" style="width:35%"></div></td><td><div class="skeleton-line" style="width:50%"></div></td><td></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- CREATE / EDIT USER MODAL -->
+  <div class="modal-overlay" id="user-modal">
+    <div class="modal-box">
+      <h3 id="modal-title">Create New User</h3>
+
+      <div class="form-group">
+        <label for="f-username">Username</label>
+        <input type="text" id="f-username" maxlength="50" placeholder="e.g. johndoe">
+        <span class="field-error" id="err-username">Username is required</span>
+      </div>
+      <div class="form-group">
+        <label for="f-email">Email</label>
+        <input type="email" id="f-email" placeholder="john@example.com">
+        <span class="field-error" id="err-email">Valid email is required</span>
+      </div>
+      <div class="form-group" id="password-group">
+        <label for="f-password">Password</label>
+        <input type="password" id="f-password" maxlength="100" placeholder="Min 6 characters">
+        <span class="field-error" id="err-password">Password must be at least 6 characters</span>
+        <span class="form-hint" id="password-hint"></span>
+      </div>
+      <div class="form-group">
+        <label for="f-role">Role</label>
+        <select id="f-role">
+          <option value="USER">User</option>
+          <option value="ADMIN">Admin</option>
+        </select>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="closeUserModal()">Cancel</button>
+        <button class="btn btn-primary" id="modal-save-btn" onclick="saveUser()">Create User</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- DEACTIVATE CONFIRM MODAL -->
+  <div class="modal-overlay" id="deactivate-modal">
+    <div class="modal-box">
+      <h3>Deactivate this user?</h3>
+      <p style="font-size:0.875rem;color:var(--muted);margin-bottom:1.5rem;">
+        <strong id="deactivate-username"></strong> will no longer be able to sign in. You can reactivate them later by editing their account.
+      </p>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="closeDeactivateModal()">Cancel</button>
+        <button class="btn btn-danger" id="confirm-deactivate-btn" onclick="confirmDeactivate()">Deactivate</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast-container"></div>
+
+  <script>
+    const API_BASE = 'http://localhost:8080/api/v1';
+
+    /* ── MOCK DATA ── */
+    const MOCK_USERS = [
+      { id:1, username:'admin', email:'admin@drp.local', role:'ADMIN', active:true,  createdAt:'2026-01-01T00:00:00' },
+      { id:2, username:'alice', email:'alice@example.com', role:'USER', active:true,  createdAt:'2026-01-10T09:00:00' },
+      { id:3, username:'bob',   email:'bob@example.com',  role:'USER', active:false, createdAt:'2026-01-15T11:00:00' },
+    ];
+
+    let allUsers = [];
+    let usingMock = false;
+    let editingUserId = null;    // null = creating, number = editing
+    let pendingDeactivateId = null;
+
+    /* ── SESSION ── */
+    function getToken() { return localStorage.getItem('drp_token'); }
+    function getUser()  { const r = localStorage.getItem('drp_user'); return r ? JSON.parse(r) : null; }
+    function logout()   { localStorage.clear(); window.location.href = '../login.html'; }
+
+    /* ── ADMIN GUARD ──
+       Only ADMIN users should reach this page.
+       If somehow a regular user lands here, send them back. */
+    const currentUser = getUser();
+    if (!currentUser || currentUser.role !== 'ADMIN') {
+      window.location.href = '../browse.html';
+      throw new Error('Access denied');
+    }
+
+    /* ── NAVBAR ── */
+    document.getElementById('nav-avatar').textContent   = currentUser.username.charAt(0).toUpperCase();
+    document.getElementById('nav-username').textContent = currentUser.username;
+    function toggleDropdown() { document.getElementById('user-dropdown').classList.toggle('open'); }
+    document.addEventListener('click', function(e) {
+      if (!e.target.closest('.dropdown')) document.getElementById('user-dropdown')?.classList.remove('open');
+    });
+
+    /* ── TOAST ── */
+    function showToast(msg, type) {
+      type = type || 'info';
+      const el = document.createElement('div');
+      el.className = 'toast toast-' + type;
+      el.textContent = msg;
+      document.getElementById('toast-container').appendChild(el);
+      setTimeout(function() { el.style.opacity='0'; el.style.transition='opacity 0.2s'; setTimeout(function(){el.remove();},220); }, 3000);
+    }
+
+    function showBanner(msg) {
+      document.getElementById('status-msg').textContent = msg;
+      document.getElementById('status-banner').className = 'status-banner warn';
+    }
+
+    /* ── API FETCH ── */
+    async function apiFetch(path, options) {
+      options = options || {};
+      const headers = Object.assign({ 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getToken() }, options.headers || {});
+      try {
+        const res  = await fetch(API_BASE + path, Object.assign({}, options, { headers }));
+        const json = await res.json();
+        if (res.status === 401) { logout(); throw new Error('Session expired'); }
+        if (!res.ok) throw new Error(json.message || 'Request failed');
+        return json;
+      } catch(err) {
+        if (err.name === 'TypeError') { usingMock = true; return null; }
+        throw err;
+      }
+    }
+
+    /* ── LOAD USERS ── */
+    async function loadUsers() {
+      const res = await apiFetch('/users');
+      if (res) {
+        allUsers = res.data;
+      } else {
+        usingMock = true;
+        showBanner('⚠️  Cannot reach backend. Showing sample data — changes will not be saved.');
+        allUsers = MOCK_USERS;
+      }
+      renderTable(allUsers);
+    }
+
+    /* ── RENDER TABLE ── */
+    function renderTable(users) {
+      document.getElementById('user-count').textContent = users.length + ' User' + (users.length !== 1 ? 's' : '');
+      const tbody = document.getElementById('users-tbody');
+      tbody.innerHTML = '';
+
+      if (users.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5"><div class="empty"><div class="empty-icon">👤</div><p>No users found.</p></div></td></tr>`;
+        return;
+      }
+
+      users.forEach(function(u) {
+        const date = new Date(u.createdAt).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
+        const isSelf = u.id === currentUser.userId;
+        const tr = document.createElement('tr');
+        tr.setAttribute('data-username', u.username.toLowerCase());
+        tr.setAttribute('data-email', u.email.toLowerCase());
+        tr.innerHTML = `
+          <td>
+            <div class="user-cell">
+              <div class="u-avatar">${u.username.charAt(0).toUpperCase()}</div>
+              <div>
+                <div class="u-name">${esc(u.username)} ${isSelf ? '<span style="font-size:0.7rem;color:var(--hint)">(you)</span>' : ''}</div>
+                <div class="u-email">${esc(u.email)}</div>
+              </div>
+            </div>
+          </td>
+          <td><span class="badge ${u.role === 'ADMIN' ? 'badge-admin' : 'badge-user'}">${u.role}</span></td>
+          <td><span class="badge ${u.active ? 'badge-active' : 'badge-inactive'}">${u.active ? 'Active' : 'Inactive'}</span></td>
+          <td style="color:var(--hint);font-size:0.82rem">${date}</td>
+          <td>
+            <div class="row-actions">
+              <button class="icon-btn" title="Edit" onclick="openEditModal(${u.id})">
+                <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M11 2l3 3-8 8H3v-3l8-8z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>
+              </button>
+              ${!isSelf ? `
+              <button class="icon-btn del" title="Deactivate" onclick="openDeactivateModal(${u.id}, '${esc(u.username)}')" ${!u.active ? 'disabled style="opacity:0.4;cursor:not-allowed"' : ''}>
+                <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M2 8h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+              </button>` : ''}
+            </div>
+          </td>`;
+        tbody.appendChild(tr);
+      });
+    }
+
+    /* ── FILTER TABLE (client-side search) ── */
+    function filterTable() {
+      const q = document.getElementById('search-input').value.toLowerCase();
+      const filtered = allUsers.filter(function(u) {
+        return u.username.toLowerCase().includes(q) || u.email.toLowerCase().includes(q);
+      });
+      renderTable(filtered);
+    }
+
+    /* ── CREATE MODAL ── */
+    function openCreateModal() {
+      editingUserId = null;
+      document.getElementById('modal-title').textContent = 'Create New User';
+      document.getElementById('modal-save-btn').textContent = 'Create User';
+      document.getElementById('f-username').value = '';
+      document.getElementById('f-email').value = '';
+      document.getElementById('f-password').value = '';
+      document.getElementById('f-role').value = 'USER';
+      document.getElementById('password-hint').textContent = 'Required for new users.';
+      document.getElementById('password-group').style.display = '';
+      clearModalErrors();
+      document.getElementById('user-modal').classList.add('show');
+    }
+
+    /* ── EDIT MODAL ── */
+    function openEditModal(userId) {
+      const user = allUsers.find(function(u) { return u.id === userId; });
+      if (!user) return;
+      editingUserId = userId;
+      document.getElementById('modal-title').textContent = 'Edit User';
+      document.getElementById('modal-save-btn').textContent = 'Save Changes';
+      document.getElementById('f-username').value = user.username;
+      document.getElementById('f-email').value = user.email;
+      document.getElementById('f-password').value = '';
+      document.getElementById('f-role').value = user.role;
+      document.getElementById('password-hint').textContent = 'Leave blank to keep current password.';
+      clearModalErrors();
+      document.getElementById('user-modal').classList.add('show');
+    }
+
+    function closeUserModal() { document.getElementById('user-modal').classList.remove('show'); }
+
+    /* ── SAVE USER (create or update) ── */
+    async function saveUser() {
+      if (usingMock) { showToast('Cannot save in demo mode.', 'info'); return; }
+
+      clearModalErrors();
+      const username = document.getElementById('f-username').value.trim();
+      const email    = document.getElementById('f-email').value.trim();
+      const password = document.getElementById('f-password').value;
+      const role     = document.getElementById('f-role').value;
+      let valid = true;
+
+      if (!username) { showModalError('username', 'Username is required'); valid = false; }
+      if (!email || !email.includes('@')) { showModalError('email', 'Valid email is required'); valid = false; }
+      if (!editingUserId && password.length < 6) { showModalError('password', 'Password must be at least 6 characters'); valid = false; }
+      if (editingUserId && password && password.length < 6) { showModalError('password', 'Password must be at least 6 characters'); valid = false; }
+      if (!valid) return;
+
+      const btn = document.getElementById('modal-save-btn');
+      btn.disabled = true; btn.textContent = 'Saving…';
+
+      try {
+        if (!editingUserId) {
+          // POST /users — create new user
+          await apiFetch('/users', {
+            method: 'POST',
+            body: JSON.stringify({ username, email, password, role })
+          });
+          showToast('User created!', 'success');
+        } else {
+          // PUT /users/{id} — update existing user
+          const body = { username };
+          if (password) body.password = password;
+          await apiFetch('/users/' + editingUserId, {
+            method: 'PUT',
+            body: JSON.stringify(body)
+          });
+          showToast('User updated!', 'success');
+        }
+        closeUserModal();
+        loadUsers();
+      } catch(err) {
+        showToast(err.message, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = editingUserId ? 'Save Changes' : 'Create User';
+      }
+    }
+
+    /* ── DEACTIVATE ── */
+    function openDeactivateModal(id, username) {
+      pendingDeactivateId = id;
+      document.getElementById('deactivate-username').textContent = username;
+      document.getElementById('deactivate-modal').classList.add('show');
+    }
+    function closeDeactivateModal() { document.getElementById('deactivate-modal').classList.remove('show'); }
+
+    async function confirmDeactivate() {
+      if (usingMock) { showToast('Cannot deactivate in demo mode.', 'info'); closeDeactivateModal(); return; }
+      const btn = document.getElementById('confirm-deactivate-btn');
+      btn.disabled = true; btn.textContent = 'Deactivating…';
+      try {
+        await apiFetch('/users/' + pendingDeactivateId, { method: 'DELETE' });
+        showToast('User deactivated.', 'success');
+        closeDeactivateModal();
+        loadUsers();
+      } catch(err) {
+        showToast(err.message, 'error');
+      } finally {
+        btn.disabled = false; btn.textContent = 'Deactivate';
+      }
+    }
+
+    document.querySelectorAll('.modal-overlay').forEach(function(m) {
+      m.addEventListener('click', function(e) { if (e.target === m) m.classList.remove('show'); });
+    });
+
+    /* ── HELPERS ── */
+    function showModalError(field, msg) {
+      document.getElementById('err-' + field).textContent = msg;
+      document.getElementById('err-' + field).classList.add('show');
+      document.getElementById('f-' + field).style.borderColor = '#E24B4A';
+    }
+    function clearModalErrors() {
+      ['username','email','password'].forEach(function(f) {
+        document.getElementById('err-' + f).classList.remove('show');
+        document.getElementById('f-' + f).style.borderColor = '';
+      });
+    }
+    function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+    /* ── INIT ── */
+    loadUsers();
+  </script>
+</body>
+</html>

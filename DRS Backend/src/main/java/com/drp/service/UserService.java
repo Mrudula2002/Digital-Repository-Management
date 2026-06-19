@@ -4,6 +4,7 @@ import com.drp.dto.request.RegisterUserRequest;
 import com.drp.dto.request.UpdateUserRequest;
 import com.drp.dto.response.UserResponse;
 import com.drp.entity.ActivityAction;
+import com.drp.entity.Role;
 import com.drp.entity.User;
 import com.drp.exception.BadRequestException;
 import com.drp.exception.ResourceNotFoundException;
@@ -67,8 +68,7 @@ public class UserService {
         user.setUsername(request.getUsername());
         user.setEmail(request.getEmail());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
-        user.setRole(request.getRole());
-        user.setActive(true);
+        user.setRole(Role.USER);        user.setActive(true);
 
         User saved = userRepository.save(user);
         activityLogService.log(actor, ActivityAction.CREATE_USER, "User", saved.getId(),

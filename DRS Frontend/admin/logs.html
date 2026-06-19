@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Activity Logs — DRP Admin</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --brand:#534AB7; --brand-light:#EEEDFE; --brand-dark:#3C3489;
+      --bg:#ffffff; --bg-2:#F7F6F3; --bg-3:#F1EFE8;
+      --text:#1a1a18; --muted:#5f5e5a; --hint:#888780;
+      --border:rgba(0,0,0,0.09); --border-med:rgba(0,0,0,0.16);
+      --radius:8px; --radius-lg:12px;
+      --font:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+    }
+    body { font-family:var(--font); background:var(--bg-2); color:var(--text); min-height:100vh; }
+    a { color:var(--brand); text-decoration:none; }
+    .navbar { height:56px; background:var(--bg); border-bottom:0.5px solid var(--border); position:sticky; top:0; z-index:100; }
+    .nav-inner { max-width:1100px; margin:0 auto; padding:0 1.5rem; height:100%; display:flex; align-items:center; gap:1.5rem; }
+    .brand { display:flex; align-items:center; gap:0.5rem; font-weight:700; font-size:0.95rem; color:var(--text); text-decoration:none; }
+    .brand-icon { width:28px; height:28px; background:var(--brand); border-radius:6px; display:flex; align-items:center; justify-content:center; color:#fff; font-size:0.75rem; font-weight:800; }
+    .nav-links { display:flex; gap:0.25rem; list-style:none; }
+    .nav-links a { display:block; padding:0.35rem 0.75rem; border-radius:var(--radius); font-size:0.875rem; color:var(--muted); text-decoration:none; transition:background 0.15s; }
+    .nav-links a:hover, .nav-links a.active { background:var(--bg-2); color:var(--text); }
+    .nav-right { margin-left:auto; display:flex; align-items:center; gap:0.75rem; }
+    .user-pill { display:flex; align-items:center; gap:0.5rem; padding:0.25rem 0.65rem 0.25rem 0.3rem; border-radius:99px; border:0.5px solid var(--border-med); background:var(--bg-2); font-size:0.8rem; color:var(--muted); cursor:pointer; }
+    .avatar { width:24px; height:24px; border-radius:50%; background:var(--brand-light); color:var(--brand-dark); font-size:0.7rem; font-weight:700; display:flex; align-items:center; justify-content:center; text-transform:uppercase; }
+    .dropdown { position:relative; }
+    .dropdown-menu { display:none; position:absolute; right:0; top:calc(100% + 6px); background:var(--bg); border:0.5px solid var(--border-med); border-radius:var(--radius-lg); box-shadow:0 4px 16px rgba(0,0,0,0.1); min-width:160px; overflow:hidden; z-index:200; }
+    .dropdown-menu.open { display:block; }
+    .dropdown-menu a, .dropdown-menu button { display:flex; align-items:center; gap:0.5rem; width:100%; padding:0.6rem 1rem; font-size:0.875rem; color:var(--text); background:none; border:none; cursor:pointer; text-align:left; text-decoration:none; font-family:var(--font); transition:background 0.1s; }
+    .dropdown-menu a:hover, .dropdown-menu button:hover { background:var(--bg-2); }
+    .dropdown-menu hr { border:none; border-top:0.5px solid var(--border); margin:0.25rem 0; }
+    .danger { color:#A32D2D !important; }
+    .admin-banner { background:linear-gradient(135deg,#1a1830,#2d2660); padding:1.25rem 1.5rem; }
+    .admin-banner-inner { max-width:1100px; margin:0 auto; display:flex; align-items:center; gap:1rem; flex-wrap:wrap; justify-content:space-between; }
+    .admin-banner h1 { font-size:1.2rem; font-weight:700; color:#fff; }
+    .admin-banner p { font-size:0.82rem; color:rgba(255,255,255,0.45); margin-top:0.15rem; }
+    .admin-pill { background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.18); color:rgba(255,255,255,0.8); border-radius:99px; padding:0.2rem 0.75rem; font-size:0.75rem; font-weight:600; }
+    .status-banner { padding:0.6rem 1.5rem; font-size:0.82rem; display:flex; align-items:center; gap:0.6rem; font-weight:500; }
+    .status-banner.warn { background:#FAEEDA; color:#854F0B; }
+    .status-banner.hidden { display:none; }
+    .status-dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; background:#EF9F27; }
+    .page-wrap { max-width:1100px; margin:0 auto; padding:1.75rem 1.5rem 4rem; }
+    .page-header { display:flex; align-items:center; justify-content:space-between; gap:1rem; margin-bottom:1.25rem; flex-wrap:wrap; }
+    .page-header h2 { font-size:1.1rem; font-weight:600; }
+
+    /* FILTERS BAR */
+    .filters { display:flex; gap:0.6rem; align-items:center; flex-wrap:wrap; }
+    .filter-select { padding:0.4rem 0.65rem; border:0.5px solid var(--border-med); border-radius:var(--radius); font-size:0.82rem; font-family:var(--font); outline:none; cursor:pointer; background:var(--bg); color:var(--text); }
+    .filter-select:focus { border-color:var(--brand); }
+    .btn-sm { display:inline-flex; align-items:center; gap:0.35rem; padding:0.38rem 0.75rem; font-size:0.8rem; font-weight:500; font-family:var(--font); border-radius:var(--radius); border:0.5px solid var(--border-med); cursor:pointer; background:var(--bg); color:var(--text); transition:background 0.15s; }
+    .btn-sm:hover { background:var(--bg-2); }
+
+    /* TABLE */
+    .table-wrap { background:var(--bg); border:0.5px solid var(--border); border-radius:var(--radius-lg); overflow:hidden; }
+    .table-wrap-scroll { overflow-x:auto; }
+    table { width:100%; border-collapse:collapse; font-size:0.875rem; min-width:700px; }
+    thead th { padding:0.7rem 1rem; text-align:left; font-weight:500; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; color:var(--hint); background:var(--bg-2); border-bottom:0.5px solid var(--border); white-space:nowrap; }
+    tbody td { padding:0.7rem 1rem; border-bottom:0.5px solid var(--border); vertical-align:middle; }
+    tbody tr:last-child td { border-bottom:none; }
+    tbody tr:hover td { background:var(--bg-2); }
+
+    /* Action badge — each action type gets a color */
+    .action-badge {
+      display:inline-flex; align-items:center; gap:0.3rem;
+      padding:0.18rem 0.55rem; border-radius:99px;
+      font-size:0.7rem; font-weight:600; text-transform:uppercase; letter-spacing:0.03em;
+    }
+    .action-LOGIN           { background:#E6F1FB; color:#185FA5; }
+    .action-UPLOAD          { background:#EAF3DE; color:#3B6D11; }
+    .action-UPDATE          { background:#FAEEDA; color:#854F0B; }
+    .action-DELETE          { background:#FCEBEB; color:#A32D2D; }
+    .action-CREATE_USER     { background:var(--brand-light); color:var(--brand-dark); }
+    .action-UPDATE_USER     { background:#FAEEDA; color:#854F0B; }
+    .action-CREATE_CATEGORY { background:var(--brand-light); color:var(--brand-dark); }
+    .action-UPDATE_CATEGORY { background:#FAEEDA; color:#854F0B; }
+    .action-DELETE_CATEGORY { background:#FCEBEB; color:#A32D2D; }
+
+    .u-avatar-sm { width:24px; height:24px; border-radius:50%; background:var(--brand-light); color:var(--brand-dark); font-size:0.65rem; font-weight:700; display:inline-flex; align-items:center; justify-content:center; text-transform:uppercase; flex-shrink:0; vertical-align:middle; margin-right:0.4rem; }
+
+    .details-text { font-size:0.8rem; color:var(--muted); max-width:260px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+    /* SKELETON */
+    .skeleton-line { height:13px; background:var(--bg-3); border-radius:4px; animation:pulse 1.4s ease-in-out infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.45} }
+
+    /* EMPTY */
+    .empty { text-align:center; padding:3rem; color:var(--muted); }
+    .empty-icon { font-size:2rem; opacity:0.3; margin-bottom:0.75rem; }
+
+    /* PAGINATION */
+    .pagination { display:flex; align-items:center; gap:0.3rem; justify-content:center; margin-top:1.25rem; }
+    .page-btn { min-width:34px; height:34px; padding:0 0.5rem; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--radius); border:0.5px solid var(--border); background:var(--bg); font-size:0.875rem; font-family:var(--font); color:var(--muted); cursor:pointer; transition:background 0.1s,color 0.1s; }
+    .page-btn:hover { background:var(--bg-2); color:var(--text); }
+    .page-btn.active { background:var(--brand); color:#fff; border-color:var(--brand); }
+    .page-btn:disabled { opacity:0.35; cursor:not-allowed; }
+
+    #toast-container { position:fixed; bottom:1.5rem; right:1.5rem; display:flex; flex-direction:column; gap:0.5rem; z-index:9999; }
+    .toast { display:flex; align-items:center; gap:0.6rem; padding:0.75rem 1rem; border-radius:var(--radius); font-size:0.875rem; font-weight:500; box-shadow:0 4px 12px rgba(0,0,0,0.12); animation:toast-in 0.2s ease; max-width:300px; }
+    @keyframes toast-in { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+    .toast-error { background:#FCEBEB; color:#A32D2D; }
+    .hidden { display:none !important; }
+  </style>
+</head>
+<body>
+
+  <div class="status-banner hidden" id="status-banner">
+    <div class="status-dot"></div><span id="status-msg"></span>
+  </div>
+
+  <nav class="navbar">
+    <div class="nav-inner">
+      <a href="../browse.html" class="brand"><div class="brand-icon">DR</div>DRP</a>
+      <ul class="nav-links">
+        <li><a href="../browse.html">Browse</a></li>
+        <li><a href="../upload.html">Upload</a></li>
+        <li><a href="users.html">Users</a></li>
+        <li><a href="categories.html">Categories</a></li>
+        <li><a href="logs.html" class="active">Logs</a></li>
+      </ul>
+      <div class="nav-right">
+        <div class="dropdown">
+          <div class="user-pill" onclick="toggleDropdown()">
+            <div class="avatar" id="nav-avatar">A</div>
+            <span id="nav-username">Admin</span>
+            <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div class="dropdown-menu" id="user-dropdown">
+            <a href="../profile.html">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="5" r="3" stroke="currentColor" stroke-width="1.2"/><path d="M2 14c0-3.3 2.7-6 6-6s6 2.7 6 6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>My Profile
+            </a>
+            <hr>
+            <button class="danger" onclick="logout()">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M10 2H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h6M11 5l3 3-3 3M7 8h7" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>Sign out
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <div class="admin-banner">
+    <div class="admin-banner-inner">
+      <div><h1>Activity Logs</h1><p>Every significant action recorded in chronological order</p></div>
+      <span class="admin-pill">Admin Panel</span>
+    </div>
+  </div>
+
+  <div class="page-wrap">
+    <div class="page-header">
+      <h2 id="log-count">Logs</h2>
+      <div class="filters">
+        <!-- Filter by action type -->
+        <select class="filter-select" id="action-filter" onchange="applyFilter()">
+          <option value="">All actions</option>
+          <option value="LOGIN">Login</option>
+          <option value="UPLOAD">Upload</option>
+          <option value="UPDATE">Update</option>
+          <option value="DELETE">Delete</option>
+          <option value="CREATE_USER">Create User</option>
+          <option value="UPDATE_USER">Update User</option>
+          <option value="CREATE_CATEGORY">Create Category</option>
+          <option value="UPDATE_CATEGORY">Update Category</option>
+          <option value="DELETE_CATEGORY">Delete Category</option>
+        </select>
+        <button class="btn-sm" onclick="resetFilter()">Clear</button>
+        <button class="btn-sm" onclick="loadLogs()" style="border-color:var(--brand-light);color:var(--brand)">
+          <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M13.5 8A5.5 5.5 0 1 1 8 2.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M8 1v4l2-2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Refresh
+        </button>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <div class="table-wrap-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Action</th>
+              <th>User</th>
+              <th>Entity</th>
+              <th>Details</th>
+              <th>Timestamp</th>
+            </tr>
+          </thead>
+          <tbody id="logs-tbody">
+            <tr><td><div class="skeleton-line" style="width:30px"></div></td><td><div class="skeleton-line" style="width:70px"></div></td><td><div class="skeleton-line" style="width:80px"></div></td><td><div class="skeleton-line" style="width:60px"></div></td><td><div class="skeleton-line" style="width:150px"></div></td><td><div class="skeleton-line" style="width:100px"></div></td></tr>
+            <tr><td><div class="skeleton-line" style="width:30px"></div></td><td><div class="skeleton-line" style="width:60px"></div></td><td><div class="skeleton-line" style="width:70px"></div></td><td><div class="skeleton-line" style="width:55px"></div></td><td><div class="skeleton-line" style="width:130px"></div></td><td><div class="skeleton-line" style="width:100px"></div></td></tr>
+            <tr><td><div class="skeleton-line" style="width:30px"></div></td><td><div class="skeleton-line" style="width:80px"></div></td><td><div class="skeleton-line" style="width:90px"></div></td><td><div class="skeleton-line" style="width:65px"></div></td><td><div class="skeleton-line" style="width:140px"></div></td><td><div class="skeleton-line" style="width:100px"></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="pagination" id="pagination"></div>
+  </div>
+
+  <div id="toast-container"></div>
+
+  <script>
+    const API_BASE = 'http://localhost:8080/api/v1';
+
+    /* MOCK DATA — realistic log history */
+    const MOCK_LOGS = [
+      { id:8, username:'bob',   action:'UPLOAD',          entityType:'Resource', entityId:6, details:'Uploaded resource: Brand Logo Assets',      timestamp:'2025-11-22T16:05:00' },
+      { id:7, username:'bob',   action:'LOGIN',           entityType:'User',     entityId:3, details:'User logged in: bob',                        timestamp:'2025-11-22T16:00:00' },
+      { id:6, username:'alice', action:'UPLOAD',          entityType:'Resource', entityId:5, details:'Uploaded resource: Database Design Notes',   timestamp:'2025-12-10T11:03:00' },
+      { id:5, username:'admin', action:'CREATE_CATEGORY', entityType:'Category', entityId:4, details:'Created category: General Documents',        timestamp:'2026-01-01T00:01:00' },
+      { id:4, username:'admin', action:'CREATE_CATEGORY', entityType:'Category', entityId:3, details:'Created category: Presentations',            timestamp:'2026-01-01T00:01:00' },
+      { id:3, username:'admin', action:'CREATE_USER',     entityType:'User',     entityId:2, details:'Created user: alice',                        timestamp:'2026-01-10T09:01:00' },
+      { id:2, username:'admin', action:'UPLOAD',          entityType:'Resource', entityId:1, details:'Uploaded resource: Q1 Financial Report 2026',timestamp:'2026-03-01T10:02:00' },
+      { id:1, username:'admin', action:'LOGIN',           entityType:'User',     entityId:1, details:'User logged in: admin',                      timestamp:'2026-01-01T00:00:00' },
+    ];
+
+    const PAGE_SIZE = 20;
+    let currentPage = 0;
+    let totalPages  = 0;
+    let usingMock   = false;
+    let activeFilter = '';
+    let displayedLogs = []; // what's currently shown (filtered)
+
+    function getToken() { return localStorage.getItem('drp_token'); }
+    function getUser()  { const r = localStorage.getItem('drp_user'); return r ? JSON.parse(r) : null; }
+    function logout()   { localStorage.clear(); window.location.href = '../login.html'; }
+
+    const currentUser = getUser();
+    if (!currentUser || currentUser.role !== 'ADMIN') { window.location.href = '../browse.html'; throw new Error('Access denied'); }
+
+    document.getElementById('nav-avatar').textContent   = currentUser.username.charAt(0).toUpperCase();
+    document.getElementById('nav-username').textContent = currentUser.username;
+    function toggleDropdown() { document.getElementById('user-dropdown').classList.toggle('open'); }
+    document.addEventListener('click', function(e) { if (!e.target.closest('.dropdown')) document.getElementById('user-dropdown')?.classList.remove('open'); });
+
+    function showToast(msg, type) {
+      type = type || 'error';
+      const el = document.createElement('div'); el.className = 'toast toast-' + type; el.textContent = msg;
+      document.getElementById('toast-container').appendChild(el);
+      setTimeout(function() { el.style.opacity='0'; el.style.transition='opacity 0.2s'; setTimeout(function(){el.remove();},220); }, 3500);
+    }
+    function showBanner(msg) { document.getElementById('status-msg').textContent = msg; document.getElementById('status-banner').className = 'status-banner warn'; }
+
+    /* LOAD LOGS */
+    async function loadLogs() {
+      showSkeletons();
+      const params = new URLSearchParams({ page: currentPage, size: PAGE_SIZE });
+
+      try {
+        const headers = { 'Content-Type':'application/json', 'Authorization':'Bearer '+getToken() };
+        const res  = await fetch(API_BASE + '/activity-logs?' + params.toString(), { headers });
+        const json = await res.json();
+
+        if (res.status === 401) { logout(); return; }
+        if (!res.ok) throw new Error(json.message || 'Failed to load logs');
+
+        totalPages = json.data.totalPages;
+        const logs = json.data.content;
+        // Flatten: API returns userId/username nested, mock has username flat
+        displayedLogs = logs.map(function(l) {
+          return Object.assign({}, l, { username: l.username || (l.user && l.user.username) || '—' });
+        });
+        usingMock = false;
+
+      } catch(err) {
+        if (err.name === 'TypeError' || err.message === 'Failed to fetch') {
+          usingMock = true;
+          showBanner('⚠️  Cannot reach backend. Showing sample activity data.');
+          displayedLogs = MOCK_LOGS;
+          totalPages = 1;
+        } else {
+          showToast('Could not load logs: ' + err.message);
+          displayedLogs = []; totalPages = 0;
+        }
+      }
+
+      applyFilter();
+    }
+
+    /* FILTER (client-side — API doesn't support action filter natively) */
+    function applyFilter() {
+      activeFilter = document.getElementById('action-filter').value;
+      const filtered = activeFilter
+        ? displayedLogs.filter(function(l) { return l.action === activeFilter; })
+        : displayedLogs;
+
+      renderTable(filtered);
+      renderPagination(totalPages);
+    }
+
+    function resetFilter() {
+      document.getElementById('action-filter').value = '';
+      activeFilter = '';
+      applyFilter();
+    }
+
+    /* RENDER TABLE */
+    function renderTable(logs) {
+      document.getElementById('log-count').textContent = logs.length + ' Log entr' + (logs.length !== 1 ? 'ies' : 'y');
+      const tbody = document.getElementById('logs-tbody');
+      tbody.innerHTML = '';
+
+      if (logs.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6"><div class="empty"><div class="empty-icon">🗒️</div><p>No logs match the selected filter.</p></div></td></tr>`;
+        return;
+      }
+
+      logs.forEach(function(log) {
+        const ts = new Date(log.timestamp);
+        const dateStr = ts.toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
+        const timeStr = ts.toLocaleTimeString('en-US', { hour:'2-digit', minute:'2-digit' });
+        const username = log.username || '—';
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td style="color:var(--hint);font-size:0.78rem">#${log.id}</td>
+          <td><span class="action-badge action-${log.action}">${formatAction(log.action)}</span></td>
+          <td>
+            <span class="u-avatar-sm">${username.charAt(0).toUpperCase()}</span>
+            <span style="font-size:0.85rem">${esc(username)}</span>
+          </td>
+          <td style="font-size:0.82rem;color:var(--muted)">${log.entityType || '—'} ${log.entityId ? '<span style="color:var(--hint)">#'+log.entityId+'</span>' : ''}</td>
+          <td><div class="details-text" title="${esc(log.details || '')}">${esc(log.details || '—')}</div></td>
+          <td style="font-size:0.78rem;white-space:nowrap">
+            <div style="color:var(--text)">${dateStr}</div>
+            <div style="color:var(--hint)">${timeStr}</div>
+          </td>`;
+        tbody.appendChild(tr);
+      });
+    }
+
+    /* RENDER PAGINATION */
+    function renderPagination(total) {
+      const c = document.getElementById('pagination');
+      c.innerHTML = '';
+      if (total <= 1 || usingMock) return;
+
+      const prev = document.createElement('button');
+      prev.className = 'page-btn'; prev.textContent = '←'; prev.disabled = currentPage === 0;
+      prev.onclick = function() { currentPage--; loadLogs(); };
+      c.appendChild(prev);
+
+      for (var i = 0; i < total; i++) {
+        const btn = document.createElement('button');
+        btn.className = 'page-btn' + (i === currentPage ? ' active' : '');
+        btn.textContent = i + 1;
+        btn.onclick = (function(p) { return function() { currentPage = p; loadLogs(); }; })(i);
+        c.appendChild(btn);
+      }
+
+      const next = document.createElement('button');
+      next.className = 'page-btn'; next.textContent = '→'; next.disabled = currentPage >= total - 1;
+      next.onclick = function() { currentPage++; loadLogs(); };
+      c.appendChild(next);
+    }
+
+    /* SKELETONS */
+    function showSkeletons() {
+      const tbody = document.getElementById('logs-tbody');
+      tbody.innerHTML = '';
+      for (var i = 0; i < 8; i++) {
+        tbody.innerHTML += `<tr>
+          <td><div class="skeleton-line" style="width:28px"></div></td>
+          <td><div class="skeleton-line" style="width:70px"></div></td>
+          <td><div class="skeleton-line" style="width:80px"></div></td>
+          <td><div class="skeleton-line" style="width:60px"></div></td>
+          <td><div class="skeleton-line" style="width:${120+Math.floor(Math.random()*80)}px"></div></td>
+          <td><div class="skeleton-line" style="width:90px"></div></td>
+        </tr>`;
+      }
+    }
+
+    /* HELPERS */
+    function formatAction(action) {
+      const map = {
+        LOGIN:'Login', UPLOAD:'Upload', UPDATE:'Update', DELETE:'Delete',
+        CREATE_USER:'New User', UPDATE_USER:'Edit User',
+        CREATE_CATEGORY:'New Category', UPDATE_CATEGORY:'Edit Category', DELETE_CATEGORY:'Del Category'
+      };
+      return map[action] || action;
+    }
+    function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+    loadLogs();
+  </script>
+</body>
+</html>

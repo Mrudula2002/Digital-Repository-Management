@@ -20,9 +20,6 @@ public class RegisterUserRequest {
     @Size(min = 6, message = "Password must be at least 6 characters")
     private String password;
 
-    @NotNull(message = "Role is required")
-    private Role role;
-
     public String getUsername() {
         return username;
     }
@@ -47,11 +44,5 @@ public class RegisterUserRequest {
         this.password = password;
     }
 
-    public Role getRole() {
-        return role;
-    }
 
-    public void setRole(Role role) {
-        this.role = role;
-    }
 }

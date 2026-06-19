@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign in — DRP</title>
+  <style>
+
+    /* ── Basic reset: remove default browser spacing ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    /* ── Page body: dark background, center everything ── */
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 1.5rem;
+      background: #0f0e1a;
+      overflow: hidden;
+      color: #fff;
+    }
+
+    /* ── Three blurred blobs that float in the background ── */
+    /* They are just big blurred circles positioned behind the card */
+    .bg-blobs { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+
+    .blob {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(80px);     /* makes the circle look soft/glowy */
+      opacity: 0.35;
+      animation: float 8s ease-in-out infinite;
+    }
+
+    /* Each blob: different size, color, position, animation delay */
+    .blob-1 { width:420px; height:420px; background:#534AB7; top:-10%;  left:-5%;  animation-delay:0s; }
+    .blob-2 { width:320px; height:320px; background:#1D9E75; top:50%;   right:-8%; animation-delay:2s; }
+    .blob-3 { width:260px; height:260px; background:#D85A30; bottom:-5%;left:30%;  animation-delay:4s; }
+
+    /* Blobs gently drift up and down */
+    @keyframes float {
+      0%, 100% { transform: translateY(0)    scale(1);    }
+      50%       { transform: translateY(-30px) scale(1.05); }
+    }
+
+    /* ── Card wrapper: sits above the blobs (z-index:1) ── */
+    .login-wrap {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 400px;
+      /* Slide up + fade in when the page first loads */
+      animation: card-enter 0.5s ease both;
+    }
+
+    @keyframes card-enter {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0);    }
+    }
+
+    /* ── Logo row above the card ── */
+    .login-logo {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.6rem;
+      margin-bottom: 1.75rem;
+    }
+
+    .brand-icon-lg {
+      width: 44px; height: 44px;
+      background: linear-gradient(135deg, #534AB7, #7F77DD);
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      color: #fff;
+      font-size: 1.1rem; font-weight: 800;
+      box-shadow: 0 4px 20px rgba(83,74,183,0.5);
+    }
+
+    .logo-text strong { display:block; font-size:1.15rem; color:#fff; }
+    .logo-text span   { font-size:0.7rem; color:rgba(255,255,255,0.4); text-transform:uppercase; letter-spacing:0.05em; }
+
+    /* ── Glassmorphism card ── */
+    /* Semi-transparent background + blur = frosted glass look */
+    .login-card {
+      background: rgba(255,255,255,0.06);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 20px;
+      padding: 2.25rem 2rem;
+    }
+
+    .login-card h1    { font-size:1.3rem; font-weight:600; margin-bottom:0.25rem; }
+    .login-card .sub  { font-size:0.875rem; color:rgba(255,255,255,0.45); margin-bottom:1.75rem; }
+
+    /* ── Form labels ── */
+    label { display:block; font-size:0.875rem; font-weight:500; color:rgba(255,255,255,0.7); margin-bottom:0.375rem; }
+
+    /* ── Text inputs ── */
+    .field { position: relative; margin-bottom: 1rem; }
+
+    .field-icon {
+      position:absolute; left:0.75rem; top:50%; transform:translateY(-50%);
+      color:rgba(255,255,255,0.3); pointer-events:none; display:flex;
+    }
+
+    input {
+      width:100%;
+      padding: 0.55rem 0.75rem 0.55rem 2.4rem;
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 10px;
+      color: #fff;
+      font-size: 0.875rem;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+    }
+
+    input::placeholder { color: rgba(255,255,255,0.25); }
+
+    /* Blue glow when the user clicks into the field */
+    input:focus {
+      background: rgba(255,255,255,0.11);
+      border-color: #7F77DD;
+      box-shadow: 0 0 0 3px rgba(127,119,221,0.25);
+    }
+
+    /* Red border when validation fails */
+    input.error {
+      border-color: rgba(226,75,74,0.7);
+      box-shadow: 0 0 0 3px rgba(226,75,74,0.15);
+    }
+
+    /* Eye button to show/hide password */
+    .toggle-pw {
+      position:absolute; right:0.75rem; top:50%; transform:translateY(-50%);
+      color:rgba(255,255,255,0.3); background:none; border:none; cursor:pointer;
+      display:flex; padding:0; transition:color 0.15s;
+    }
+    .toggle-pw:hover { color:rgba(255,255,255,0.7); }
+
+    /* Small red error text under the field */
+    .field-error { display:none; font-size:0.75rem; color:#F09595; margin-top:0.3rem; }
+    .field-error.show { display:block; }
+
+    /* ── Error alert box (shown on wrong password) ── */
+    .error-alert {
+      display:none;
+      align-items:flex-start; gap:0.6rem;
+      padding:0.75rem 1rem;
+      background:rgba(226,75,74,0.15);
+      border:1px solid rgba(226,75,74,0.35);
+      border-radius:10px;
+      color:#F09595;
+      font-size:0.85rem;
+      margin-bottom:1.1rem;
+    }
+    .register-text{
+    text-align:center;
+    margin-top:1rem;
+    margin-bottom:1rem;
+    font-size:0.85rem;
+    color:rgba(255,255,255,0.45);
+}
+
+.register-text a{
+    color:#7F77DD;
+    text-decoration:none;
+    font-weight:600;
+    margin-left:4px;
+}
+
+.register-text a:hover{
+    text-decoration:underline;
+}
+
+    /* ── Sign-in button ── */
+    .btn-signin {
+      width:100%; padding:0.65rem;
+      background: linear-gradient(135deg, #534AB7, #7F77DD);
+      color:#fff; border:none; border-radius:10px;
+      font-size:0.95rem; font-weight:600; font-family:inherit;
+      cursor:pointer;
+      display:flex; align-items:center; justify-content:center; gap:0.4rem;
+      margin-top:0.75rem;
+      box-shadow: 0 4px 16px rgba(83,74,183,0.45);
+      transition: opacity 0.2s, transform 0.1s, box-shadow 0.2s;
+    }
+    .btn-signin:hover  { opacity:0.9; box-shadow:0 6px 22px rgba(83,74,183,0.55); }
+    .btn-signin:active { transform:scale(0.98); }
+    .btn-signin:disabled { opacity:0.5; cursor:not-allowed; transform:none; }
+
+    /* ── Spinner animation (shown while waiting for the API) ── */
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spin { animation: spin 0.6s linear infinite; display:inline-block; }
+
+    /* ── Divider line with text ── */
+    .divider {
+      display:flex; align-items:center; gap:0.75rem;
+      margin: 1.25rem 0 0.75rem;
+      color:rgba(255,255,255,0.2); font-size:0.75rem;
+    }
+    .divider::before, .divider::after {
+      content:''; flex:1; height:1px; background:rgba(255,255,255,0.1);
+    }
+
+    /* ── Hint text at the bottom ── */
+    .hint { text-align:center; font-size:0.78rem; color:rgba(255,255,255,0.25); }
+    .hint strong { color:rgba(255,255,255,0.45); }
+
+    /* ── Toast notifications (the pop-up messages) ──
+       A toast is a small box that appears, shows a message, then disappears.
+       Named after toast popping up from a toaster. */
+    #toast-container {
+      position:fixed; bottom:1.5rem; right:1.5rem;
+      display:flex; flex-direction:column; gap:0.5rem; z-index:9999;
+    }
+
+    .toast {
+      display:flex; align-items:center; gap:0.6rem;
+      padding:0.75rem 1rem;
+      border-radius:8px;
+      font-size:0.875rem; font-weight:500;
+      box-shadow:0 4px 12px rgba(0,0,0,0.25);
+      animation: toast-in 0.2s ease;
+      max-width:300px;
+    }
+
+    /* Toast slides up when it appears */
+    @keyframes toast-in {
+      from { opacity:0; transform:translateY(8px); }
+      to   { opacity:1; transform:translateY(0);   }
+    }
+
+    /* Green toast = success, Red = error */
+    .toast-success { background:#EAF3DE; color:#3B6D11; }
+    .toast-error   { background:#FCEBEB; color:#A32D2D; }
+
+    /* hide helper */
+    .hidden { display:none !important; }
+
+  </style>
+</head>
+<body>
+
+  <!-- Floating blobs in the background -->
+  <div class="bg-blobs">
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="blob blob-3"></div>
+  </div>
+
+  <!-- Login card -->
+  <div class="login-wrap">
+
+    <!-- Logo above the card -->
+    <div class="login-logo">
+      <div class="brand-icon-lg">DR</div>
+      <div class="logo-text">
+        <strong>Digital Repository</strong>
+        <span>Platform</span>
+      </div>
+    </div>
+
+    <div class="login-card">
+      <h1>Welcome back 👋</h1>
+      <p class="sub">Enter your credentials to continue</p>
+
+      <!-- Error box — hidden by default, shown when login fails -->
+      <div class="error-alert" id="error-box" role="alert">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style="flex-shrink:0;margin-top:1px">
+          <circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.2"/>
+          <path d="M8 5v4M8 10.5v.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        <span id="error-msg">Invalid username or password.</span>
+      </div>
+
+      <form id="login-form" novalidate>
+
+        <!-- Username field -->
+        <label for="username">Username</label>
+        <div class="field">
+          <span class="field-icon">
+            <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
+              <circle cx="8" cy="5" r="3" stroke="currentColor" stroke-width="1.2"/>
+              <path d="M2 14c0-3.3 2.7-6 6-6s6 2.7 6 6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+            </svg>
+          </span>
+          <input type="text" id="username" placeholder="e.g. admin" autocomplete="username">
+          <div class="field-error" id="username-err">Username is required</div>
+        </div>
+
+        <!-- Password field -->
+        <label for="password">Password</label>
+        <div class="field">
+          <span class="field-icon">
+            <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
+              <rect x="3" y="7" width="10" height="7" rx="1.5" stroke="currentColor" stroke-width="1.2"/>
+              <path d="M5 7V5a3 3 0 0 1 6 0v2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+            </svg>
+          </span>
+          <input type="password" id="password" placeholder="Enter your password" autocomplete="current-password">
+          <!-- Clicking this toggles the password between hidden (dots) and visible -->
+          <button type="button" class="toggle-pw" id="toggle-pw" aria-label="Show or hide password">
+            <svg id="eye-icon" width="15" height="15" viewBox="0 0 16 16" fill="none">
+              <path d="M1 8s2.5-5 7-5 7 5 7 5-2.5 5-7 5-7-5-7-5z" stroke="currentColor" stroke-width="1.2"/>
+              <circle cx="8" cy="8" r="2" stroke="currentColor" stroke-width="1.2"/>
+            </svg>
+          </button>
+          <div class="field-error" id="password-err">Password is required</div>
+        </div>
+
+        <!-- Submit button -->
+        <button type="submit" class="btn-signin" id="submit-btn">
+          <span id="btn-text">Sign in</span>
+          <!-- This spinner replaces the text while we wait for the API response -->
+          <span id="btn-spinner" class="hidden">
+            <svg class="spin" width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <circle cx="8" cy="8" r="6" stroke="rgba(255,255,255,0.3)" stroke-width="2"/>
+              <path d="M14 8a6 6 0 0 0-6-6" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            Signing in...
+          </span>
+        </button>
+
+      </form>
+
+      <!-- <div class="divider">default credentials</div>
+      <p class="hint">username: <strong>admin</strong> &nbsp;·&nbsp; password: <strong>admin123</strong></p>
+
+    </div> -->
+    <p class="register-text">
+  Don't have an account?
+  <a href="register.html">Register</a>
+</p>
+  </div>
+
+  <!-- Container where toast messages will appear (bottom-right) -->
+  <div id="toast-container"></div>
+
+  <script>
+
+    /* ==========================================================
+       CONFIGURATION
+       Change this if your backend runs on a different port.
+    ========================================================== */
+    const API_BASE = 'http://localhost:8080/api/v1';
+
+
+    /* ==========================================================
+       TOAST — pop-up notification messages
+       Usage: showToast('Hello!', 'success')
+              showToast('Something went wrong', 'error')
+
+       A toast is just a <div> added to the page that auto-removes
+       itself after a few seconds. Named after toast popping up
+       from a toaster.
+    ========================================================== */
+    function showToast(message, type = 'success') {
+      const icons = {
+        success: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.2"/><path d="M5 8l2 2 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+        error:   `<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.2"/><path d="M5.5 5.5l5 5M10.5 5.5l-5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>`,
+      };
+
+      // Create the toast div
+      const toast = document.createElement('div');
+      toast.className = 'toast toast-' + type;
+      toast.innerHTML = (icons[type] || '') + '<span>' + message + '</span>';
+
+      // Add it to the container on the page
+      document.getElementById('toast-container').appendChild(toast);
+
+      // After 3 seconds, fade it out and remove it
+      setTimeout(function () {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(4px)';
+        toast.style.transition = 'opacity 0.2s, transform 0.2s';
+        setTimeout(function () { toast.remove(); }, 220);
+      }, 3500);
+    }
+
+
+    /* ==========================================================
+       SESSION HELPERS
+       We store the JWT token in localStorage so the user stays
+       logged in even if they refresh the page.
+
+       localStorage is like a small key-value notepad that lives
+       in the browser. It persists until the user clears it.
+    ========================================================== */
+    function saveSession(data) {
+      // data comes from the /auth/login response
+      localStorage.setItem('drp_token', data.token);
+      localStorage.setItem('drp_user', JSON.stringify({
+        userId:   data.userId,
+        username: data.username,
+        email:    data.email,
+        role:     data.role,
+      }));
+    }
+
+    function isLoggedIn() {
+      return !!localStorage.getItem('drp_token');  // !! converts to true/false
+    }
+
+
+    /* ==========================================================
+       REDIRECT if already logged in
+       No point showing the login page if they have a valid token.
+    ========================================================== */
+    if (isLoggedIn()) {
+      window.location.href = 'browse.html';
+    }
+
+
+    /* ==========================================================
+       PASSWORD SHOW / HIDE
+       Clicking the eye icon toggles the input type between
+       "password" (shows dots) and "text" (shows real characters).
+    ========================================================== */
+    document.getElementById('toggle-pw').addEventListener('click', function () {
+      const input = document.getElementById('password');
+      const isHidden = input.type === 'password';
+
+      input.type = isHidden ? 'text' : 'password';
+
+      // Also swap the icon: open eye vs slashed eye
+      document.getElementById('eye-icon').innerHTML = isHidden
+        ? /* slashed eye (password is now visible) */
+          `<path d="M2 2l12 12M6.5 6.6A2 2 0 0 0 10 9.5M4.2 4.3C2.8 5.3 1.7 6.7 1 8c1.5 3 4 5 7 5a8 8 0 0 0 3.8-.9M6 3.2A8 8 0 0 1 8 3c3 0 5.5 2 7 5a12 12 0 0 1-1.6 2.3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>`
+        : /* open eye (password is now hidden) */
+          `<path d="M1 8s2.5-5 7-5 7 5 7 5-2.5 5-7 5-7-5-7-5z" stroke="currentColor" stroke-width="1.2"/>
+           <circle cx="8" cy="8" r="2" stroke="currentColor" stroke-width="1.2"/>`;
+    });
+
+
+    /* ==========================================================
+       FORM SUBMISSION
+       This runs when the user clicks "Sign in".
+    ========================================================== */
+    document.getElementById('login-form').addEventListener('submit', async function (e) {
+      e.preventDefault();   // stops the browser from reloading the page
+
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value;
+
+      // --- Step 1: Validate inputs (don't even call the API if fields are empty) ---
+      let isValid = true;
+
+      if (!username) {
+        document.getElementById('username-err').classList.add('show');
+        document.getElementById('username').classList.add('error');
+        isValid = false;
+      } else {
+        document.getElementById('username-err').classList.remove('show');
+        document.getElementById('username').classList.remove('error');
+      }
+
+      if (!password) {
+        document.getElementById('password-err').classList.add('show');
+        document.getElementById('password').classList.add('error');
+        isValid = false;
+      } else {
+        document.getElementById('password-err').classList.remove('show');
+        document.getElementById('password').classList.remove('error');
+      }
+
+      if (!isValid) return;   // stop here if something is missing
+
+      // --- Step 2: Show loading state so the user knows something is happening ---
+      const btn = document.getElementById('submit-btn');
+      btn.disabled = true;
+      document.getElementById('btn-text').classList.add('hidden');
+      document.getElementById('btn-spinner').classList.remove('hidden');
+      document.getElementById('error-box').style.display = 'none';
+
+      try {
+        // --- Step 3: Call the backend API ---
+        // fetch() is the built-in browser function for making HTTP requests
+        const response = await fetch(API_BASE + '/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: username, password: password }),
+        });
+
+        const json = await response.json();   // parse the JSON response
+
+        if (!response.ok) {
+          // Server returned an error (e.g. 401 Unauthorized)
+          throw new Error(json.message || 'Invalid credentials.');
+        }
+
+        // --- Step 4: Save token and redirect ---
+        // json.data contains: { token, userId, username, email, role }
+        saveSession(json.data);
+
+        showToast('Welcome back, ' + json.data.username + '! 🎉', 'success');
+
+        // Wait 700ms so the user sees the toast, then redirect
+        setTimeout(function () {
+          window.location.href = 'browse.html';
+        }, 700);
+
+      } catch (err) {
+        // --- Something went wrong: show the error message ---
+        document.getElementById('error-msg').textContent = err.message || 'Something went wrong. Try again.';
+        document.getElementById('error-box').style.display = 'flex';
+        document.getElementById('password').value = '';   // clear password for security
+      } finally {
+        // --- Always restore the button (whether success or error) ---
+        btn.disabled = false;
+        document.getElementById('btn-text').classList.remove('hidden');
+        document.getElementById('btn-spinner').classList.add('hidden');
+      }
+    });
+
+
+    /* ==========================================================
+       CLEAR ERRORS while the user is typing
+       Once they start correcting a mistake, hide the red message.
+    ========================================================== */
+    document.getElementById('username').addEventListener('input', function () {
+      document.getElementById('error-box').style.display = 'none';
+      this.classList.remove('error');
+      document.getElementById('username-err').classList.remove('show');
+    });
+
+    document.getElementById('password').addEventListener('input', function () {
+      document.getElementById('error-box').style.display = 'none';
+      this.classList.remove('error');
+      document.getElementById('password-err').classList.remove('show');
+    });
+
+  </script>
+
+</body>
+</html>

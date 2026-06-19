@@ -1,11 +1,13 @@
 package com.drp.controller;
 
 import com.drp.dto.request.LoginRequest;
+import com.drp.dto.request.RegisterUserRequest;
 import com.drp.dto.response.ApiResponse;
 import com.drp.dto.response.AuthResponse;
 import com.drp.dto.response.UserResponse;
 import com.drp.service.AuthService;
 import jakarta.validation.Valid;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -22,6 +24,17 @@ public class AuthController {
         this.authService = authService;
     }
 
+    @PostMapping("/register")
+    public ApiResponse<String> register(
+            @Valid @RequestBody RegisterUserRequest request) {
+
+        authService.register(request);
+
+        return ApiResponse.success(
+                "User registered successfully",
+                "OK"
+        );
+    }
     @PostMapping("/login")
     public ApiResponse<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
         return ApiResponse.success("Login successful", authService.login(request));

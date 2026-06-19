@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Profile — DRP</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --brand:       #534AB7;
+      --brand-light: #EEEDFE;
+      --brand-dark:  #3C3489;
+      --bg:          #ffffff;
+      --bg-2:        #F7F6F3;
+      --bg-3:        #F1EFE8;
+      --text:        #1a1a18;
+      --muted:       #5f5e5a;
+      --hint:        #888780;
+      --border:      rgba(0,0,0,0.09);
+      --border-med:  rgba(0,0,0,0.16);
+      --radius:      8px;
+      --radius-lg:   12px;
+      --font:        -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+
+    body { font-family: var(--font); background: var(--bg-2); color: var(--text); min-height: 100vh; }
+    a { color: var(--brand); text-decoration: none; }
+
+    /* ── NAVBAR ── */
+    .navbar { height:56px; background:var(--bg); border-bottom:0.5px solid var(--border); position:sticky; top:0; z-index:100; }
+    .nav-inner { max-width:1100px; margin:0 auto; padding:0 1.5rem; height:100%; display:flex; align-items:center; gap:1.5rem; }
+    .brand { display:flex; align-items:center; gap:0.5rem; font-weight:700; font-size:0.95rem; color:var(--text); text-decoration:none; }
+    .brand-icon { width:28px; height:28px; background:var(--brand); border-radius:6px; display:flex; align-items:center; justify-content:center; color:#fff; font-size:0.75rem; font-weight:800; }
+    .nav-links { display:flex; gap:0.25rem; list-style:none; }
+    .nav-links a { display:block; padding:0.35rem 0.75rem; border-radius:var(--radius); font-size:0.875rem; color:var(--muted); text-decoration:none; transition:background 0.15s,color 0.15s; }
+    .nav-links a:hover, .nav-links a.active { background:var(--bg-2); color:var(--text); }
+    .nav-right { margin-left:auto; display:flex; align-items:center; gap:0.75rem; }
+    .user-pill { display:flex; align-items:center; gap:0.5rem; padding:0.25rem 0.65rem 0.25rem 0.3rem; border-radius:99px; border:0.5px solid var(--border-med); background:var(--bg-2); font-size:0.8rem; color:var(--muted); cursor:pointer; }
+    .user-pill:hover { background:var(--bg-3); }
+    .avatar { width:24px; height:24px; border-radius:50%; background:var(--brand-light); color:var(--brand-dark); font-size:0.7rem; font-weight:700; display:flex; align-items:center; justify-content:center; text-transform:uppercase; }
+    .dropdown { position:relative; }
+    .dropdown-menu { display:none; position:absolute; right:0; top:calc(100% + 6px); background:var(--bg); border:0.5px solid var(--border-med); border-radius:var(--radius-lg); box-shadow:0 4px 16px rgba(0,0,0,0.1); min-width:160px; overflow:hidden; z-index:200; }
+    .dropdown-menu.open { display:block; }
+    .dropdown-menu a, .dropdown-menu button { display:flex; align-items:center; gap:0.5rem; width:100%; padding:0.6rem 1rem; font-size:0.875rem; color:var(--text); background:none; border:none; cursor:pointer; text-align:left; text-decoration:none; transition:background 0.1s; font-family:var(--font); }
+    .dropdown-menu a:hover, .dropdown-menu button:hover { background:var(--bg-2); }
+    .dropdown-menu hr { border:none; border-top:0.5px solid var(--border); margin:0.25rem 0; }
+    .dropdown-menu .danger { color:#A32D2D; }
+    .btn { display:inline-flex; align-items:center; gap:0.4rem; padding:0.45rem 1rem; font-size:0.875rem; font-weight:500; font-family:var(--font); border-radius:var(--radius); border:0.5px solid transparent; cursor:pointer; text-decoration:none; transition:background 0.15s,transform 0.1s; white-space:nowrap; }
+    .btn:active { transform: scale(0.98); }
+    .btn-primary { background:var(--brand); color:#fff; }
+    .btn-primary:hover { background:var(--brand-dark); }
+    .btn-secondary { background:var(--bg); color:var(--text); border-color:var(--border-med); }
+    .btn-secondary:hover { background:var(--bg-2); }
+    .btn-sm { padding:0.3rem 0.7rem; font-size:0.8rem; }
+
+    /* ── STATUS BANNER ── */
+    .status-banner { padding:0.6rem 1.5rem; font-size:0.82rem; display:flex; align-items:center; gap:0.6rem; font-weight:500; }
+    .status-banner.warn { background:#FAEEDA; color:#854F0B; }
+    .status-banner.hidden { display:none; }
+    .status-dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; background:#EF9F27; }
+
+    /* ── PAGE LAYOUT ── */
+    .page-wrap { max-width: 900px; margin: 0 auto; padding: 1.75rem 1.5rem 4rem; }
+
+    /* ── PROFILE HEADER CARD ── */
+    .profile-header {
+      background: var(--bg); border: 0.5px solid var(--border);
+      border-radius: var(--radius-lg); padding: 1.75rem;
+      display: flex; align-items: center; gap: 1.25rem;
+      margin-bottom: 1.5rem; flex-wrap: wrap;
+    }
+
+    .profile-avatar {
+      width: 64px; height: 64px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--brand), #7F77DD);
+      color: #fff; font-size: 1.6rem; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      text-transform: uppercase; flex-shrink: 0;
+    }
+
+    .profile-info { flex: 1; min-width: 200px; }
+    .profile-name { font-size: 1.25rem; font-weight: 700; display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+    .profile-email { font-size: 0.875rem; color: var(--muted); margin-top: 0.2rem; }
+    .profile-joined { font-size: 0.78rem; color: var(--hint); margin-top: 0.3rem; }
+
+    /* Role badge */
+    .badge {
+      display: inline-flex; align-items: center; padding: 0.2rem 0.6rem;
+      font-size: 0.7rem; font-weight: 600; border-radius: 99px;
+      text-transform: uppercase; letter-spacing: 0.04em;
+    }
+    .badge-admin { background: var(--brand-light); color: var(--brand-dark); }
+    .badge-user  { background: var(--bg-3); color: var(--muted); }
+
+    /* ── STATS ROW ── */
+    .stats-row {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 1rem; margin-bottom: 1.5rem;
+    }
+    .stat-card {
+      background: var(--bg); border: 0.5px solid var(--border);
+      border-radius: var(--radius-lg); padding: 1rem 1.25rem;
+    }
+    .stat-value { font-size: 1.5rem; font-weight: 700; color: var(--text); }
+    .stat-label { font-size: 0.78rem; color: var(--hint); margin-top: 0.2rem; }
+
+    /* ── SECTION HEADER ── */
+    .section-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;
+    }
+    .section-header h2 { font-size: 1.1rem; font-weight: 600; }
+
+    /* ── RESOURCES TABLE ── */
+    .table-wrap {
+      background: var(--bg); border: 0.5px solid var(--border);
+      border-radius: var(--radius-lg); overflow: hidden;
+    }
+
+    table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+
+    thead th {
+      padding: 0.7rem 1rem; text-align: left; font-weight: 500;
+      font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em;
+      color: var(--hint); background: var(--bg-2);
+      border-bottom: 0.5px solid var(--border);
+    }
+
+    tbody td {
+      padding: 0.7rem 1rem; border-bottom: 0.5px solid var(--border);
+      color: var(--text); vertical-align: middle;
+    }
+    tbody tr:last-child td { border-bottom: none; }
+    tbody tr:hover td { background: var(--bg-2); }
+
+    .res-title-cell {
+      display: flex; align-items: center; gap: 0.6rem;
+      max-width: 320px;
+    }
+    .res-title-text {
+      font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .res-title-cell a { color: var(--text); }
+    .res-title-cell a:hover { color: var(--brand); }
+
+    /* File type badge */
+    .file-badge {
+      display: inline-flex; align-items: center; padding: 0.15rem 0.5rem;
+      border-radius: 99px; font-size: 0.68rem; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.03em; flex-shrink: 0;
+    }
+    .badge-pdf  { background:#FCEBEB; color:#A32D2D; }
+    .badge-doc  { background:#E6F1FB; color:#185FA5; }
+    .badge-txt  { background:#F1EFE8; color:#5f5e5a; }
+    .badge-img  { background:#EAF3DE; color:#3B6D11; }
+    .badge-file { background:var(--brand-light); color:var(--brand-dark); }
+
+    .row-actions { display: flex; gap: 0.4rem; justify-content: flex-end; }
+    .icon-btn {
+      width: 30px; height: 30px; border-radius: var(--radius);
+      border: 0.5px solid var(--border-med); background: var(--bg-2);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; color: var(--muted); transition: background 0.1s, color 0.1s;
+    }
+    .icon-btn:hover { background: var(--brand-light); color: var(--brand-dark); }
+    .icon-btn.danger:hover { background: #FCEBEB; color: #A32D2D; }
+
+    .text-muted { color: var(--muted); font-size: 0.8rem; }
+    .text-hint  { color: var(--hint); font-size: 0.78rem; }
+
+    /* ── EMPTY STATE ── */
+    .empty-state { text-align: center; padding: 3rem 1.5rem; color: var(--muted); }
+    .empty-icon { font-size: 2.25rem; margin-bottom: 0.75rem; opacity: 0.35; }
+    .empty-state h3 { font-size: 0.95rem; color: var(--text); margin-bottom: 0.4rem; }
+    .empty-state p { font-size: 0.85rem; margin-bottom: 1rem; }
+
+    /* ── LOADING SKELETON ── */
+    .skeleton-row td { padding: 0.85rem 1rem; }
+    .skeleton-line { height: 14px; background: var(--bg-3); border-radius: 4px; animation: pulse 1.4s ease-in-out infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.45} }
+
+    /* ── DELETE MODAL ── */
+    .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:1000; align-items:center; justify-content:center; }
+    .modal-overlay.show { display:flex; }
+    .modal-box { background:var(--bg); border-radius:var(--radius-lg); padding:1.75rem; max-width:380px; width:90%; box-shadow:0 8px 32px rgba(0,0,0,0.2); animation:modal-in 0.2s ease; }
+    @keyframes modal-in { from{opacity:0;transform:scale(0.96)} to{opacity:1;transform:scale(1)} }
+    .modal-box h3 { font-size:1.05rem; margin-bottom:0.5rem; }
+    .modal-box p { font-size:0.875rem; color:var(--muted); line-height:1.5; margin-bottom:1.5rem; }
+    .modal-actions { display:flex; gap:0.6rem; justify-content:flex-end; }
+    .btn-danger { background:#FCEBEB; color:#A32D2D; }
+    .btn-danger:hover { background:#F7C1C1; }
+
+    /* ── TOAST ── */
+    #toast-container { position:fixed; bottom:1.5rem; right:1.5rem; display:flex; flex-direction:column; gap:0.5rem; z-index:9999; }
+    .toast { display:flex; align-items:center; gap:0.6rem; padding:0.75rem 1rem; border-radius:var(--radius); font-size:0.875rem; font-weight:500; box-shadow:0 4px 12px rgba(0,0,0,0.12); animation:toast-in 0.2s ease; max-width:300px; }
+    @keyframes toast-in { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+    .toast-success { background:#EAF3DE; color:#3B6D11; }
+    .toast-error   { background:#FCEBEB; color:#A32D2D; }
+    .toast-info    { background:#E6F1FB; color:#185FA5; }
+
+    .hidden { display: none !important; }
+
+    @media (max-width: 600px) {
+      .table-wrap { overflow-x: auto; }
+      table { min-width: 540px; }
+      .profile-header { padding: 1.25rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="status-banner hidden" id="status-banner">
+    <div class="status-dot"></div>
+    <span id="status-msg"></span>
+  </div>
+
+  <!-- ── NAVBAR ── -->
+  <nav class="navbar">
+    <div class="nav-inner">
+      <a href="browse.html" class="brand">
+        <div class="brand-icon">DR</div>
+        DRP
+      </a>
+      <ul class="nav-links">
+        <li><a href="browse.html">Browse</a></li>
+        <li><a href="upload.html">Upload</a></li>
+        <li id="nav-admin-users" class="hidden"><a href="admin/users.html">Users</a></li>
+        <li id="nav-admin-cats"  class="hidden"><a href="admin/categories.html">Categories</a></li>
+        <li id="nav-admin-logs"  class="hidden"><a href="admin/logs.html">Logs</a></li>
+      </ul>
+      <div class="nav-right">
+        <div class="dropdown" id="nav-user">
+          <div class="user-pill" onclick="toggleDropdown()">
+            <div class="avatar" id="nav-avatar">?</div>
+            <span id="nav-username">User</span>
+            <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div class="dropdown-menu" id="user-dropdown">
+            <a href="profile.html" class="active">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="5" r="3" stroke="currentColor" stroke-width="1.2"/><path d="M2 14c0-3.3 2.7-6 6-6s6 2.7 6 6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+              My Profile
+            </a>
+            <a href="upload.html">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M8 2v9M5 5l3-3 3 3M3 13h10" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              Upload Resource
+            </a>
+            <hr>
+            <button class="danger" onclick="logout()">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M10 2H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h6M11 5l3 3-3 3M7 8h7" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              Sign out
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ── PAGE CONTENT ── -->
+  <div class="page-wrap">
+
+    <!-- ── PROFILE HEADER ── -->
+    <div class="profile-header">
+      <div class="profile-avatar" id="profile-avatar">?</div>
+      <div class="profile-info">
+        <div class="profile-name">
+          <span id="profile-username">—</span>
+          <span class="badge badge-user" id="profile-role-badge">USER</span>
+        </div>
+        <div class="profile-email" id="profile-email">—</div>
+        <div class="profile-joined" id="profile-joined">—</div>
+      </div>
+      <a href="upload.html" class="btn btn-primary">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M8 2v9M5 5l3-3 3 3M3 13h10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Upload New
+      </a>
+    </div>
+
+    <!-- ── STATS ── -->
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-value" id="stat-total">—</div>
+        <div class="stat-label">Resources Uploaded</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="stat-size">—</div>
+        <div class="stat-label">Total Storage Used</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="stat-recent">—</div>
+        <div class="stat-label">Most Recent Upload</div>
+      </div>
+    </div>
+
+    <!-- ── MY RESOURCES TABLE ── -->
+    <div class="section-header">
+      <h2>My Resources</h2>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Title</th>
+            <th>Category</th>
+            <th>Size</th>
+            <th>Uploaded</th>
+            <th style="text-align:right">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="resources-tbody">
+          <!-- Skeleton rows shown while loading -->
+          <tr class="skeleton-row">
+            <td><div class="skeleton-line" style="width:70%"></div></td>
+            <td><div class="skeleton-line" style="width:60%"></div></td>
+            <td><div class="skeleton-line" style="width:40%"></div></td>
+            <td><div class="skeleton-line" style="width:50%"></div></td>
+            <td><div class="skeleton-line" style="width:60px;margin-left:auto"></div></td>
+          </tr>
+          <tr class="skeleton-row">
+            <td><div class="skeleton-line" style="width:55%"></div></td>
+            <td><div class="skeleton-line" style="width:45%"></div></td>
+            <td><div class="skeleton-line" style="width:35%"></div></td>
+            <td><div class="skeleton-line" style="width:50%"></div></td>
+            <td><div class="skeleton-line" style="width:60px;margin-left:auto"></div></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+
+  <!-- ── DELETE CONFIRMATION MODAL ── -->
+  <div class="modal-overlay" id="delete-modal">
+    <div class="modal-box">
+      <h3>Delete this resource?</h3>
+      <p>This will permanently remove <strong id="delete-resource-title">this resource</strong> and its file. This action cannot be undone.</p>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="hideDeleteModal()">Cancel</button>
+        <button class="btn btn-danger" onclick="confirmDelete()" id="confirm-delete-btn">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast-container"></div>
+
+  <script>
+    /* ==========================================================
+       CONFIGURATION
+    ========================================================== */
+    const API_BASE = 'http://localhost:8080/api/v1';
+
+    /* ==========================================================
+       MOCK DATA — used if backend is unreachable
+    ========================================================== */
+    const MOCK_RESOURCES = [
+      { id:1, title:'Q1 Financial Report 2026', fileName:'q1-report.pdf', fileType:'application/pdf', fileSize:204800, categoryName:'Reports', uploadedById:1, createdAt:'2026-03-01T10:00:00' },
+      { id:4, title:'Employee Handbook 2026', fileName:'handbook.pdf', fileType:'application/pdf', fileSize:307200, categoryName:'General Documents', uploadedById:1, createdAt:'2026-01-05T08:00:00' },
+    ];
+
+    let usingMock = false;
+    let myResources = [];   // all resources, filtered down to "mine"
+    let pendingDeleteId = null;
+
+    /* ==========================================================
+       SESSION HELPERS
+    ========================================================== */
+    function getToken()   { return localStorage.getItem('drp_token'); }
+    function getUser()    { const r = localStorage.getItem('drp_user'); return r ? JSON.parse(r) : null; }
+    function isLoggedIn() { return !!getToken(); }
+    function logout() {
+      localStorage.removeItem('drp_token');
+      localStorage.removeItem('drp_user');
+      window.location.href = 'login.html';
+    }
+
+    /* ==========================================================
+       AUTH GUARD — must be logged in to view this page
+
+       We check BOTH the token AND the user object. It's possible
+       to have a token but no user object (e.g. localStorage was
+       partially cleared, or an old session format). In that case
+       we treat it as "not logged in" and send the user to login.
+    ========================================================== */
+    const currentUser = getUser();
+
+    if (!isLoggedIn() || !currentUser) {
+      // Clear out any half-broken session data before redirecting
+      localStorage.removeItem('drp_token');
+      localStorage.removeItem('drp_user');
+      window.location.href = 'login.html';
+      throw new Error('Not logged in — redirecting to login.');
+      // 'throw' stops the rest of this script from running
+      // (otherwise the code below would still execute for a moment
+      // and crash trying to read currentUser.username)
+    }
+
+    /* ==========================================================
+       NAVBAR
+    ========================================================== */
+    function setupNavbar() {
+      document.getElementById('nav-avatar').textContent = currentUser.username.charAt(0).toUpperCase();
+      document.getElementById('nav-username').textContent = currentUser.username;
+      if (currentUser.role === 'ADMIN') {
+        document.getElementById('nav-admin-users').classList.remove('hidden');
+        document.getElementById('nav-admin-cats').classList.remove('hidden');
+        document.getElementById('nav-admin-logs').classList.remove('hidden');
+      }
+    }
+    function toggleDropdown() { document.getElementById('user-dropdown').classList.toggle('open'); }
+    document.addEventListener('click', function(e) {
+      if (!e.target.closest('.dropdown')) document.getElementById('user-dropdown')?.classList.remove('open');
+    });
+
+    /* ==========================================================
+       TOAST
+    ========================================================== */
+    function showToast(message, type) {
+      type = type || 'info';
+      const el = document.createElement('div');
+      el.className = 'toast toast-' + type;
+      el.textContent = message;
+      document.getElementById('toast-container').appendChild(el);
+      setTimeout(function() {
+        el.style.opacity = '0'; el.style.transition = 'opacity 0.2s';
+        setTimeout(function() { el.remove(); }, 220);
+      }, 3000);
+    }
+
+    function showBanner(message) {
+      const banner = document.getElementById('status-banner');
+      document.getElementById('status-msg').textContent = message;
+      banner.className = 'status-banner warn';
+    }
+    function hideBanner() { document.getElementById('status-banner').classList.add('hidden'); }
+
+    /* ==========================================================
+       RENDER PROFILE HEADER
+    ========================================================== */
+    function renderProfileHeader() {
+      document.getElementById('profile-avatar').textContent = currentUser.username.charAt(0).toUpperCase();
+      document.getElementById('profile-username').textContent = currentUser.username;
+      document.getElementById('profile-email').textContent = currentUser.email || '—';
+
+      const badge = document.getElementById('profile-role-badge');
+      badge.textContent = currentUser.role;
+      badge.className = 'badge ' + (currentUser.role === 'ADMIN' ? 'badge-admin' : 'badge-user');
+    }
+
+    /* ==========================================================
+       LOAD MY RESOURCES
+       The backend doesn't have a "my resources" endpoint, so we
+       fetch all resources (large page size) and filter client-side
+       by uploadedById === currentUser.userId.
+
+       NOTE: For a production app with many resources, you'd want
+       a dedicated backend endpoint like GET /resources?uploadedBy={id}
+       to avoid fetching everything. This client-side filter is fine
+       for small/medium datasets.
+    ========================================================== */
+    async function loadMyResources() {
+      try {
+        const token = getToken();
+        const res = await fetch(API_BASE + '/resources?size=100', {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        const json = await res.json();
+
+        if (res.status === 401) { logout(); return; }
+        if (!res.ok) throw new Error(json.message || 'Failed to load resources');
+
+        hideBanner();
+        usingMock = false;
+
+        // Filter to only resources uploaded by the current user
+        myResources = json.data.content.filter(function(r) {
+          return r.uploadedById === currentUser.userId;
+        });
+
+      } catch (err) {
+        // Fall back to mock data
+        usingMock = true;
+        showBanner('⚠️  Cannot reach backend (localhost:8080). Showing sample data.');
+        myResources = MOCK_RESOURCES.filter(function(r) {
+          return r.uploadedById === currentUser.userId || usingMock; // show all mock items in demo
+        });
+      }
+
+      renderStats();
+      renderResourcesTable();
+    }
+
+    /* ==========================================================
+       RENDER STATS CARDS
+    ========================================================== */
+    function renderStats() {
+      document.getElementById('stat-total').textContent = myResources.length;
+
+      const totalBytes = myResources.reduce(function(sum, r) { return sum + (r.fileSize || 0); }, 0);
+      document.getElementById('stat-size').textContent = formatFileSize(totalBytes);
+
+      if (myResources.length > 0) {
+        // Find the most recently created resource
+        const sorted = myResources.slice().sort(function(a, b) {
+          return new Date(b.createdAt) - new Date(a.createdAt);
+        });
+        const mostRecent = new Date(sorted[0].createdAt);
+        document.getElementById('stat-recent').textContent = mostRecent.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      } else {
+        document.getElementById('stat-recent').textContent = '—';
+      }
+    }
+
+    /* ==========================================================
+       RENDER RESOURCES TABLE
+    ========================================================== */
+    function renderResourcesTable() {
+      const tbody = document.getElementById('resources-tbody');
+      tbody.innerHTML = '';
+
+      if (myResources.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="5">
+              <div class="empty-state">
+                <div class="empty-icon">📄</div>
+                <h3>You haven't uploaded anything yet</h3>
+                <p>Resources you upload will appear here.</p>
+                <a href="upload.html" class="btn btn-primary">Upload your first resource</a>
+              </div>
+            </td>
+          </tr>`;
+        return;
+      }
+
+      myResources.forEach(function(r) {
+        const date = new Date(r.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        const size = formatFileSize(r.fileSize);
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>
+            <div class="res-title-cell">
+              <span class="file-badge ${getBadgeClass(r.fileType)}">${getTypeLabel(r.fileType)}</span>
+              <a href="resource.html?id=${r.id}"><span class="res-title-text">${esc(r.title)}</span></a>
+            </div>
+          </td>
+          <td><span class="text-muted">${r.categoryName ? esc(r.categoryName) : '—'}</span></td>
+          <td><span class="text-muted">${size}</span></td>
+          <td><span class="text-hint">${date}</span></td>
+          <td>
+            <div class="row-actions">
+              <button class="icon-btn" title="Download" onclick="downloadFile(${r.id}, '${esc(r.fileName)}')">
+                <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M8 2v8M5 7l3 3 3-3M3 13h10" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </button>
+              <a class="icon-btn" title="Edit" href="resource.html?id=${r.id}">
+                <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M11 2l3 3-8 8H3v-3l8-8z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>
+              </a>
+              <button class="icon-btn danger" title="Delete" onclick="showDeleteModal(${r.id}, '${esc(r.title)}')">
+                <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M3 4h10M6 4V2.5h4V4M5 4l.5 9.5h5L11 4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </button>
+            </div>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    /* ==========================================================
+       DOWNLOAD
+    ========================================================== */
+    async function downloadFile(id, fileName) {
+      if (usingMock) { showToast('Download unavailable in demo mode', 'info'); return; }
+
+      showToast('Starting download…', 'info');
+      try {
+        const res = await fetch(API_BASE + '/resources/' + id + '/download', {
+          headers: { 'Authorization': 'Bearer ' + getToken() }
+        });
+        if (!res.ok) throw new Error('Download failed');
+
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = fileName; a.click();
+        URL.revokeObjectURL(url);
+        showToast('Download started!', 'success');
+      } catch (err) {
+        showToast('Download failed: ' + err.message, 'error');
+      }
+    }
+
+    /* ==========================================================
+       DELETE
+    ========================================================== */
+    function showDeleteModal(id, title) {
+      pendingDeleteId = id;
+      document.getElementById('delete-resource-title').textContent = '"' + title + '"';
+      document.getElementById('delete-modal').classList.add('show');
+    }
+    function hideDeleteModal() {
+      document.getElementById('delete-modal').classList.remove('show');
+      pendingDeleteId = null;
+    }
+
+    async function confirmDelete() {
+      if (usingMock) {
+        showToast('Cannot delete in demo mode — backend not connected.', 'info');
+        hideDeleteModal();
+        return;
+      }
+
+      const btn = document.getElementById('confirm-delete-btn');
+      btn.disabled = true;
+      btn.textContent = 'Deleting…';
+
+      try {
+        const res = await fetch(API_BASE + '/resources/' + pendingDeleteId, {
+          method: 'DELETE',
+          headers: { 'Authorization': 'Bearer ' + getToken() }
+        });
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.message || 'Failed to delete resource');
+
+        showToast('Resource deleted.', 'success');
+        hideDeleteModal();
+
+        // Remove it from the local list and re-render (no full page reload needed)
+        myResources = myResources.filter(function(r) { return r.id !== pendingDeleteId; });
+        renderStats();
+        renderResourcesTable();
+
+      } catch (err) {
+        showToast('Delete failed: ' + err.message, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Delete';
+      }
+    }
+
+    // Close modal when clicking outside the box
+    document.getElementById('delete-modal').addEventListener('click', function(e) {
+      if (e.target === this) hideDeleteModal();
+    });
+
+    /* ==========================================================
+       HELPERS
+    ========================================================== */
+    function formatFileSize(bytes) {
+      if (!bytes) return '0 B';
+      if (bytes < 1024) return bytes + ' B';
+      if (bytes < 1048576) return Math.round(bytes / 1024) + ' KB';
+      return (bytes / 1048576).toFixed(1) + ' MB';
+    }
+
+    function getTypeLabel(m) {
+      return { 'application/pdf':'PDF', 'application/msword':'DOC',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document':'DOCX',
+        'text/plain':'TXT', 'image/jpeg':'JPG', 'image/png':'PNG' }[m] || 'FILE';
+    }
+
+    function getBadgeClass(m) {
+      if (m === 'application/pdf') return 'badge-pdf';
+      if (m && m.includes('word')) return 'badge-doc';
+      if (m === 'text/plain')      return 'badge-txt';
+      if (m && m.startsWith('image/')) return 'badge-img';
+      return 'badge-file';
+    }
+
+    function esc(s) {
+      if (!s) return '';
+      return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    /* ==========================================================
+       INIT
+    ========================================================== */
+    setupNavbar();
+    renderProfileHeader();
+    loadMyResources();
+  </script>
+
+</body>
+</html>

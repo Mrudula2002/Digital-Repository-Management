@@ -1,104 +1,309 @@
 # Digital Repository Platform (DRP)
 
-A web-based system for storing, organizing, and retrieving digital resources with role-based access control.
+A web-based Digital Repository Platform (DRP) for storing, organizing, managing, and retrieving digital resources with JWT authentication and role-based access control.
+
+---
 
 ## Tech Stack
 
-- **Backend:** Java 17, Spring Boot 3, Spring Data JPA, Spring Security
-- **Database:** MySQL 8
-- **Frontend (planned):** HTML + CSS (REST API consumer)
-- **Build:** Maven
+### Backend
+
+* Java 17
+* Spring Boot 3
+* Spring Security
+* Spring Data JPA
+* JWT Authentication
+* MySQL 8
+* Maven
+
+### Frontend
+
+* HTML5
+* CSS3
+* Vanilla JavaScript
+* Live Server (VS Code)
+
+---
+
+## Features
+
+### Authentication & Security
+
+* JWT-based authentication
+* Login functionality
+* User registration
+* Password encryption using BCrypt
+* Role-based authorization
+* Session persistence using localStorage
+
+### User Features
+
+* Browse resources
+* Search resources
+* Download resources
+* Upload resources
+* View profile information
+
+### Admin Features
+
+* User management
+* Category management
+* Activity logs
+* Resource administration
+
+---
 
 ## Project Structure
 
-```
-Project DRS/
-├── docs/
-│   └── BACKEND_ARCHITECTURE.md   ← Start here
-├── src/main/java/com/drp/
+```text
+Digital Repository Platform/
+
+├── backend/
+│
+│   ├── src/main/java/com/drp/
+│   │
 │   ├── config/
 │   ├── controller/
 │   ├── dto/
+│   │   ├── request/
+│   │   │   ├── LoginRequest.java
+│   │   │   └── RegisterUserRequest.java
+│   │   │
+│   │   └── response/
+│   │       └── ApiResponse.java
+│   │
 │   ├── entity/
-│   ├── exception/
 │   ├── repository/
 │   ├── security/
-│   └── service/
-├── src/main/resources/
-│   └── application.properties
+│   ├── service/
+│   └── exception/
+│
+│
+├── frontend/
+│
+│   ├── login.html
+│   ├── register.html
+│   ├── browse.html
+│   ├── upload.html
+│   ├── resource.html
+│   ├── profile.html
+│   │
+│   ├── register.js
+│   │
+│   └── admin/
+│       ├── users.html
+│       ├── categories.html
+│       └── logs.html
+│
 └── pom.xml
 ```
 
-## Development Phases
+---
 
-| Phase | Scope | Status |
-|-------|-------|--------|
-| 1 | Backend architecture | Done |
-| 2 | Entities, repositories, services, REST APIs, JWT security | Done |
-| 3 | HTML/CSS frontend | Next |
-| 4 | Integration & testing | Later |
+## Authentication Flow
 
-## Prerequisites
+```text
+Register
+    ↓
+POST /auth/register
+    ↓
+User created
+    ↓
+Default role assigned → USER
+    ↓
+Login
+    ↓
+POST /auth/login
+    ↓
+JWT generated
+    ↓
+Stored in localStorage
+    ↓
+Redirect to browse page
+```
 
-- JDK 17+
-- Maven 3.8+
-- MySQL 8 running locally
+---
 
-## Quick Start
+## Backend API Endpoints
 
-1. Start MySQL and update `src/main/resources/application.properties` if needed.
-2. Run from IntelliJ (open `DrpApplication`) or via Maven:
+### Authentication
+
+| Method | Endpoint       | Access        |
+| ------ | -------------- | ------------- |
+| POST   | /auth/register | Public        |
+| POST   | /auth/login    | Public        |
+| GET    | /auth/me       | Authenticated |
+
+### Users
+
+| Method | Endpoint | Access |
+| ------ | -------- | ------ |
+| GET    | /users   | Admin  |
+| POST   | /users   | Admin  |
+| PUT    | /users   | Admin  |
+| DELETE | /users   | Admin  |
+
+### Categories
+
+| Method | Endpoint    | Access |
+| ------ | ----------- | ------ |
+| GET    | /categories | Public |
+| POST   | /categories | Admin  |
+| PUT    | /categories | Admin  |
+| DELETE | /categories | Admin  |
+
+### Resources
+
+| Method | Endpoint                 | Access        |
+| ------ | ------------------------ | ------------- |
+| GET    | /resources               | Public        |
+| POST   | /resources               | Authenticated |
+| PUT    | /resources               | Authenticated |
+| DELETE | /resources               | Authenticated |
+| GET    | /resources/{id}/download | Public        |
+
+### Activity Logs
+
+| Method | Endpoint       | Access |
+| ------ | -------------- | ------ |
+| GET    | /activity-logs | Admin  |
+
+---
+
+## Registration Request Example
+
+```json
+POST http://localhost:8080/api/v1/auth/register
+
+{
+   "username":"john123",
+   "email":"john@example.com",
+   "password":"password123"
+}
+```
+
+---
+
+## Login Request Example
+
+```json
+POST http://localhost:8080/api/v1/auth/login
+
+{
+   "username":"john123",
+   "password":"password123"
+}
+```
+
+---
+
+## Running the Backend
+
+Open terminal from backend root:
 
 ```bash
 mvn spring-boot:run
 ```
 
-3. On first startup, a default admin is created:
-   - Username: `admin`
-   - Password: `admin123`
+Application starts at:
 
-API base URL: `http://localhost:8080/api/v1`
-
-## Phase 2 — REST API Summary
-
-All responses use `ApiResponse<T>`: `{ "success", "message", "data" }`.
-
-Authenticated requests need header: `Authorization: Bearer <token>`
-
-| Method | Endpoint | Access |
-|--------|----------|--------|
-| POST | `/auth/login` | Public |
-| GET | `/auth/me` | Authenticated |
-| GET/POST/PUT/DELETE | `/users/**` | Admin |
-| GET | `/categories` | Public |
-| POST/PUT/DELETE | `/categories/**` | Admin |
-| GET | `/resources` (search: `keyword`, `categoryId`, `fileType`, `page`, `size`) | Public |
-| GET | `/resources/{id}/download` | Public |
-| POST/PUT/DELETE | `/resources/**` | Authenticated |
-| GET | `/activity-logs` | Admin |
-
-### Postman example — login
-
-```http
-POST http://localhost:8080/api/v1/auth/login
-Content-Type: application/json
-
-{ "username": "admin", "password": "admin123" }
+```text
+http://localhost:8080
 ```
 
-### Postman example — upload resource
+API Base URL:
 
-```http
-POST http://localhost:8080/api/v1/resources
-Authorization: Bearer <token>
-Content-Type: multipart/form-data
-
-title: Sample Report
-description: Q1 summary
-categoryId: 1
-file: <select PDF file>
+```text
+http://localhost:8080/api/v1
 ```
 
-## Documentation
+---
 
-See [Backend Architecture](docs/BACKEND_ARCHITECTURE.md) for full design details.
+## Running the Frontend
+
+1. Open frontend folder in VS Code
+
+2. Install:
+
+```text
+Live Server
+```
+
+3. Right click:
+
+```text
+login.html
+```
+
+4. Select:
+
+```text
+Open with Live Server
+```
+
+Frontend URL:
+
+```text
+http://127.0.0.1:5500/login.html
+```
+
+---
+
+## Default Admin Credentials
+
+```text
+Username : admin
+Password : admin123
+```
+
+---
+
+## Frontend UI Pages
+
+### Public Pages
+
+* Login page
+* Registration page
+* Browse resources page
+* Resource details page
+
+### Authenticated Pages
+
+* Upload resource page
+* Profile page
+
+### Admin Pages
+
+* Users management
+* Categories management
+* Activity logs
+
+---
+
+## Future Improvements
+
+* File preview support
+* Email verification
+* Forgot password
+* Resource thumbnails
+* Dark/light theme switch
+* Pagination enhancements
+* Dashboard analytics
+* User profile editing
+
+---
+
+## Status
+
+| Module             | Status      |
+| ------------------ | ----------- |
+| Backend APIs       | Completed   |
+| JWT Authentication | Completed   |
+| Registration       | Completed   |
+| Login              | Completed   |
+| Frontend UI        | In Progress |
+| Admin Pages        | In Progress |
+| Testing            | Pending     |
+
+```
+```

@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Browse — DRP</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --brand:       #534AB7;
+      --brand-light: #EEEDFE;
+      --brand-dark:  #3C3489;
+      --bg:          #ffffff;
+      --bg-2:        #F7F6F3;
+      --bg-3:        #F1EFE8;
+      --text:        #1a1a18;
+      --muted:       #5f5e5a;
+      --hint:        #888780;
+      --border:      rgba(0,0,0,0.09);
+      --border-med:  rgba(0,0,0,0.16);
+      --radius:      8px;
+      --radius-lg:   12px;
+      --font:        -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+
+    body { font-family: var(--font); background: var(--bg-2); color: var(--text); min-height: 100vh; }
+    a { color: var(--brand); text-decoration: none; }
+
+    /* ── NAVBAR ── */
+    .navbar { height:56px; background:var(--bg); border-bottom:0.5px solid var(--border); position:sticky; top:0; z-index:100; }
+    .nav-inner { max-width:1100px; margin:0 auto; padding:0 1.5rem; height:100%; display:flex; align-items:center; gap:1.5rem; }
+    .brand { display:flex; align-items:center; gap:0.5rem; font-weight:700; font-size:0.95rem; color:var(--text); text-decoration:none; }
+    .brand-icon { width:28px; height:28px; background:var(--brand); border-radius:6px; display:flex; align-items:center; justify-content:center; color:#fff; font-size:0.75rem; font-weight:800; }
+    .nav-links { display:flex; gap:0.25rem; list-style:none; }
+    .nav-links a { display:block; padding:0.35rem 0.75rem; border-radius:var(--radius); font-size:0.875rem; color:var(--muted); text-decoration:none; transition:background 0.15s,color 0.15s; }
+    .nav-links a:hover, .nav-links a.active { background:var(--bg-2); color:var(--text); }
+    .nav-right { margin-left:auto; display:flex; align-items:center; gap:0.75rem; }
+    .user-pill { display:flex; align-items:center; gap:0.5rem; padding:0.25rem 0.65rem 0.25rem 0.3rem; border-radius:99px; border:0.5px solid var(--border-med); background:var(--bg-2); font-size:0.8rem; color:var(--muted); cursor:pointer; }
+    .user-pill:hover { background:var(--bg-3); }
+    .avatar { width:24px; height:24px; border-radius:50%; background:var(--brand-light); color:var(--brand-dark); font-size:0.7rem; font-weight:700; display:flex; align-items:center; justify-content:center; text-transform:uppercase; }
+    .dropdown { position:relative; }
+    .dropdown-menu { display:none; position:absolute; right:0; top:calc(100% + 6px); background:var(--bg); border:0.5px solid var(--border-med); border-radius:var(--radius-lg); box-shadow:0 4px 16px rgba(0,0,0,0.1); min-width:160px; overflow:hidden; z-index:200; }
+    .dropdown-menu.open { display:block; }
+    .dropdown-menu a, .dropdown-menu button { display:flex; align-items:center; gap:0.5rem; width:100%; padding:0.6rem 1rem; font-size:0.875rem; color:var(--text); background:none; border:none; cursor:pointer; text-align:left; text-decoration:none; transition:background 0.1s; font-family:var(--font); }
+    .dropdown-menu a:hover, .dropdown-menu button:hover { background:var(--bg-2); }
+    .dropdown-menu hr { border:none; border-top:0.5px solid var(--border); margin:0.25rem 0; }
+    .dropdown-menu .danger { color:#A32D2D; }
+    .btn { display:inline-flex; align-items:center; gap:0.4rem; padding:0.45rem 1rem; font-size:0.875rem; font-weight:500; font-family:var(--font); border-radius:var(--radius); border:0.5px solid transparent; cursor:pointer; text-decoration:none; transition:background 0.15s; white-space:nowrap; }
+    .btn-primary { background:var(--brand); color:#fff; }
+    .btn-primary:hover { background:var(--brand-dark); }
+    .btn-sm { padding:0.3rem 0.7rem; font-size:0.8rem; }
+
+    /* ── BACKEND STATUS BANNER ──
+       Shows at the top when we can't reach the backend.
+       Yellow = using mock data, Red = hard error */
+    .status-banner {
+      padding: 0.6rem 1.5rem;
+      font-size: 0.82rem;
+      display: flex; align-items: center; gap: 0.6rem;
+      font-weight: 500;
+    }
+    .status-banner.warn   { background:#FAEEDA; color:#854F0B; }
+    .status-banner.error  { background:#FCEBEB; color:#A32D2D; }
+    .status-banner.hidden { display:none; }
+    .status-dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
+    .status-dot.offline { background:#E24B4A; }
+    .status-dot.mock    { background:#EF9F27; }
+
+    /* ── HERO ── */
+    .hero { background:linear-gradient(135deg,#1a1830 0%,#2d2660 50%,#1a3a2a 100%); padding:3rem 1.5rem 2.5rem; text-align:center; }
+    .hero h1 { font-size:2rem; font-weight:700; color:#fff; margin-bottom:0.5rem; }
+    .hero p { color:rgba(255,255,255,0.55); font-size:0.95rem; margin-bottom:1.75rem; }
+    .search-box { max-width:580px; margin:0 auto; display:flex; gap:0.5rem; }
+    .search-input-wrap { flex:1; position:relative; }
+    .search-input-wrap svg { position:absolute; left:0.9rem; top:50%; transform:translateY(-50%); color:rgba(255,255,255,0.35); pointer-events:none; }
+    .search-input { width:100%; padding:0.7rem 1rem 0.7rem 2.75rem; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.18); border-radius:var(--radius); color:#fff; font-size:0.95rem; font-family:var(--font); outline:none; transition:background 0.2s,border-color 0.2s; }
+    .search-input::placeholder { color:rgba(255,255,255,0.3); }
+    .search-input:focus { background:rgba(255,255,255,0.15); border-color:rgba(255,255,255,0.4); }
+    .btn-search { padding:0.7rem 1.4rem; background:var(--brand); color:#fff; border:none; border-radius:var(--radius); font-size:0.9rem; font-weight:600; font-family:var(--font); cursor:pointer; transition:background 0.15s; }
+    .btn-search:hover { background:var(--brand-dark); }
+
+    /* ── LAYOUT ── */
+    .page-wrap { max-width:1100px; margin:0 auto; padding:1.75rem 1.5rem 4rem; display:grid; grid-template-columns:220px 1fr; gap:1.5rem; align-items:start; }
+
+    /* ── SIDEBAR ── */
+    .sidebar { background:var(--bg); border:0.5px solid var(--border); border-radius:var(--radius-lg); padding:1.25rem; position:sticky; top:72px; }
+    .sidebar h3 { font-size:0.75rem; font-weight:600; text-transform:uppercase; letter-spacing:0.06em; color:var(--hint); margin-bottom:0.75rem; }
+    .cat-btn { display:flex; align-items:center; justify-content:space-between; width:100%; padding:0.45rem 0.6rem; background:none; border:none; border-radius:var(--radius); font-size:0.85rem; color:var(--muted); cursor:pointer; font-family:var(--font); transition:background 0.1s,color 0.1s; text-align:left; }
+    .cat-btn:hover { background:var(--bg-2); color:var(--text); }
+    .cat-btn.active { background:var(--brand-light); color:var(--brand-dark); font-weight:500; }
+    .sidebar-divider { border:none; border-top:0.5px solid var(--border); margin:1rem 0; }
+    select { width:100%; padding:0.45rem 0.65rem; background:var(--bg-2); border:0.5px solid var(--border-med); border-radius:var(--radius); font-size:0.85rem; color:var(--text); font-family:var(--font); outline:none; cursor:pointer; }
+    select:focus { border-color:var(--brand); }
+    .clear-btn { width:100%; margin-top:0.75rem; padding:0.4rem; background:none; border:0.5px solid var(--border-med); border-radius:var(--radius); font-size:0.8rem; color:var(--muted); cursor:pointer; font-family:var(--font); transition:background 0.1s; }
+    .clear-btn:hover { background:var(--bg-2); }
+
+    /* ── RESULTS BAR ── */
+    .results-bar { display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem; flex-wrap:wrap; gap:0.5rem; }
+    .results-count { font-size:0.875rem; color:var(--muted); }
+    .results-count strong { color:var(--text); }
+
+    /* ── CARDS ── */
+    .cards-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:1rem; }
+    .resource-card { background:var(--bg); border:0.5px solid var(--border); border-radius:var(--radius-lg); padding:1.25rem; cursor:pointer; transition:box-shadow 0.2s,transform 0.15s,border-color 0.2s; display:flex; flex-direction:column; gap:0.75rem; }
+    .resource-card:hover { box-shadow:0 4px 16px rgba(0,0,0,0.09); transform:translateY(-2px); border-color:var(--border-med); }
+    .card-top { display:flex; align-items:center; justify-content:space-between; }
+    .file-badge { display:inline-flex; align-items:center; gap:0.3rem; padding:0.2rem 0.55rem; border-radius:99px; font-size:0.7rem; font-weight:600; text-transform:uppercase; letter-spacing:0.04em; }
+    .badge-pdf  { background:#FCEBEB; color:#A32D2D; }
+    .badge-doc  { background:#E6F1FB; color:#185FA5; }
+    .badge-txt  { background:#F1EFE8; color:#5f5e5a; }
+    .badge-img  { background:#EAF3DE; color:#3B6D11; }
+    .badge-file { background:var(--brand-light); color:var(--brand-dark); }
+    .card-date { font-size:0.75rem; color:var(--hint); }
+    .card-title { font-size:0.95rem; font-weight:600; color:var(--text); line-height:1.35; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+    .card-desc { font-size:0.82rem; color:var(--muted); line-height:1.5; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+    .card-footer { display:flex; align-items:center; justify-content:space-between; margin-top:auto; padding-top:0.75rem; border-top:0.5px solid var(--border); }
+    .uploader { display:flex; align-items:center; gap:0.4rem; font-size:0.78rem; color:var(--muted); }
+    .uploader-avatar { width:20px; height:20px; border-radius:50%; background:var(--brand-light); color:var(--brand-dark); font-size:0.6rem; font-weight:700; display:flex; align-items:center; justify-content:center; text-transform:uppercase; }
+    .cat-tag { display:inline-block; padding:0.15rem 0.5rem; background:var(--brand-light); color:var(--brand-dark); border-radius:99px; font-size:0.7rem; font-weight:500; }
+    .card-actions { display:flex; gap:0.4rem; }
+    .icon-btn { width:30px; height:30px; border-radius:var(--radius); border:0.5px solid var(--border-med); background:var(--bg-2); display:flex; align-items:center; justify-content:center; cursor:pointer; color:var(--muted); transition:background 0.1s,color 0.1s; }
+    .icon-btn:hover { background:var(--brand-light); color:var(--brand-dark); }
+
+    /* ── SKELETON LOADING ── */
+    .skeleton-card { background:var(--bg); border:0.5px solid var(--border); border-radius:var(--radius-lg); padding:1.25rem; display:flex; flex-direction:column; gap:0.75rem; }
+    .skeleton-line { background:var(--bg-3); border-radius:4px; animation:pulse 1.4s ease-in-out infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.45} }
+
+    /* ── EMPTY STATE ── */
+    .empty { grid-column:1/-1; text-align:center; padding:4rem 2rem; color:var(--muted); }
+    .empty-icon { font-size:2.5rem; margin-bottom:1rem; opacity:0.3; }
+    .empty h3 { font-size:1rem; color:var(--text); margin-bottom:0.4rem; }
+    .empty p { font-size:0.875rem; }
+
+    /* ── PAGINATION ── */
+    .pagination { display:flex; align-items:center; gap:0.3rem; justify-content:center; margin-top:1.75rem; }
+    .page-btn { min-width:34px; height:34px; padding:0 0.5rem; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--radius); border:0.5px solid var(--border); background:var(--bg); font-size:0.875rem; font-family:var(--font); color:var(--muted); cursor:pointer; transition:background 0.1s,color 0.1s; }
+    .page-btn:hover { background:var(--bg-2); color:var(--text); }
+    .page-btn.active { background:var(--brand); color:#fff; border-color:var(--brand); }
+    .page-btn:disabled { opacity:0.35; cursor:not-allowed; }
+
+    /* ── TOAST ── */
+    #toast-container { position:fixed; bottom:1.5rem; right:1.5rem; display:flex; flex-direction:column; gap:0.5rem; z-index:9999; }
+    .toast { display:flex; align-items:center; gap:0.6rem; padding:0.75rem 1rem; border-radius:var(--radius); font-size:0.875rem; font-weight:500; box-shadow:0 4px 12px rgba(0,0,0,0.12); animation:toast-in 0.2s ease; max-width:300px; }
+    @keyframes toast-in { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+    .toast-success { background:#EAF3DE; color:#3B6D11; }
+    .toast-error   { background:#FCEBEB; color:#A32D2D; }
+    .toast-info    { background:#E6F1FB; color:#185FA5; }
+
+    @media (max-width:700px) { .page-wrap{grid-template-columns:1fr} .sidebar{position:static} .hero h1{font-size:1.5rem} }
+    .hidden { display:none !important; }
+  </style>
+</head>
+<body>
+
+  <!-- ── STATUS BANNER: shown when backend is unreachable ── -->
+  <!-- This is hidden by default; JS shows it if fetch() fails -->
+  <div class="status-banner hidden" id="status-banner">
+    <div class="status-dot" id="status-dot"></div>
+    <span id="status-msg"></span>
+  </div>
+
+  <!-- ── NAVBAR ── -->
+  <nav class="navbar">
+    <div class="nav-inner">
+      <a href="browse.html" class="brand">
+        <div class="brand-icon">DR</div>
+        DRP
+      </a>
+      <ul class="nav-links">
+        <li><a href="browse.html" class="active">Browse</a></li>
+        <li id="nav-upload" class="hidden"><a href="upload.html">Upload</a></li>
+        <li id="nav-admin-users" class="hidden"><a href="admin/users.html">Users</a></li>
+        <li id="nav-admin-cats"  class="hidden"><a href="admin/categories.html">Categories</a></li>
+        <li id="nav-admin-logs"  class="hidden"><a href="admin/logs.html">Logs</a></li>
+      </ul>
+      <div class="nav-right">
+        <a href="login.html" class="btn btn-primary btn-sm" id="nav-login">Sign in</a>
+        <div class="dropdown hidden" id="nav-user">
+          <div class="user-pill" onclick="toggleDropdown()">
+            <div class="avatar" id="nav-avatar">?</div>
+            <span id="nav-username">User</span>
+            <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div class="dropdown-menu" id="user-dropdown">
+            <a href="profile.html">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="5" r="3" stroke="currentColor" stroke-width="1.2"/><path d="M2 14c0-3.3 2.7-6 6-6s6 2.7 6 6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+              My Profile
+            </a>
+            <a href="upload.html">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M8 2v9M5 5l3-3 3 3M3 13h10" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              Upload Resource
+            </a>
+            <hr>
+            <button class="danger" onclick="logout()">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M10 2H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h6M11 5l3 3-3 3M7 8h7" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              Sign out
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ── HERO + SEARCH ── -->
+  <section class="hero">
+    <h1>Browse Resources</h1>
+    <p>Search documents, reports, research papers and more</p>
+    <div class="search-box">
+      <div class="search-input-wrap">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <circle cx="6.5" cy="6.5" r="4.5" stroke="currentColor" stroke-width="1.3"/>
+          <path d="M10 10l3.5 3.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+        </svg>
+        <input class="search-input" type="search" id="search-input"
+          placeholder="Search by title, description or tags…">
+      </div>
+      <button class="btn-search" onclick="doSearch()">Search</button>
+    </div>
+  </section>
+
+  <!-- ── SIDEBAR + CARDS ── -->
+  <div class="page-wrap">
+    <aside class="sidebar">
+      <h3>Categories</h3>
+      <button class="cat-btn active" onclick="selectCategory(null, this)">All resources</button>
+      <div id="category-list"></div>
+      <hr class="sidebar-divider">
+      <h3>File type</h3>
+      <select id="filetype-select" onchange="doSearch()">
+        <option value="">All types</option>
+        <option value="application/pdf">PDF</option>
+        <option value="application/msword">DOC</option>
+        <option value="application/vnd.openxmlformats-officedocument.wordprocessingml.document">DOCX</option>
+        <option value="text/plain">TXT</option>
+        <option value="image/jpeg">JPEG</option>
+        <option value="image/png">PNG</option>
+      </select>
+      <button class="clear-btn" onclick="clearFilters()">Clear filters</button>
+    </aside>
+
+    <main>
+      <div class="results-bar">
+        <p class="results-count" id="results-count">Loading…</p>
+        <select id="sort-select" onchange="doSearch()" style="width:auto;font-size:0.8rem;padding:0.35rem 0.6rem;">
+          <option value="createdAt|desc">Newest first</option>
+          <option value="createdAt|asc">Oldest first</option>
+          <option value="title|asc">Title A–Z</option>
+          <option value="title|desc">Title Z–A</option>
+        </select>
+      </div>
+      <div class="cards-grid" id="cards-grid"></div>
+      <div class="pagination" id="pagination"></div>
+    </main>
+  </div>
+
+  <div id="toast-container"></div>
+
+  <script>
+    /* ==========================================================
+       CONFIGURATION — change these to match your setup
+    ========================================================== */
+    const API_BASE = 'http://localhost:8080/api/v1';
+
+    /* ==========================================================
+       MOCK DATA
+       Used automatically when the backend is unreachable.
+       This lets you work on the frontend without running Spring Boot.
+       Delete this block (and set USE_MOCK = false) once your
+       backend is running.
+    ========================================================== */
+    const MOCK_CATEGORIES = [
+      { id: 1, name: 'Research Papers' },
+      { id: 2, name: 'Reports' },
+      { id: 3, name: 'Presentations' },
+      { id: 4, name: 'General Documents' },
+    ];
+
+    const MOCK_RESOURCES = [
+      { id:1, title:'Q1 Financial Report 2026', description:'Quarterly financial summary including revenue, expenses and projections.', fileName:'q1-report.pdf', fileType:'application/pdf', fileSize:204800, tags:'finance,report,2026', uploadedByUsername:'admin', categoryName:'Reports', createdAt:'2026-03-01T10:00:00' },
+      { id:2, title:'Machine Learning Research Paper', description:'A study on transformer architectures and attention mechanisms in NLP.', fileName:'ml-paper.pdf', fileType:'application/pdf', fileSize:512000, tags:'AI,ML,NLP', uploadedByUsername:'alice', categoryName:'Research Papers', createdAt:'2026-02-15T09:30:00' },
+      { id:3, title:'Project Kickoff Presentation', description:'Slides for the new product launch kickoff meeting.', fileName:'kickoff.docx', fileType:'application/vnd.openxmlformats-officedocument.wordprocessingml.document', fileSize:98304, tags:'project,presentation', uploadedByUsername:'bob', categoryName:'Presentations', createdAt:'2026-01-20T14:00:00' },
+      { id:4, title:'Employee Handbook 2026', description:'Updated HR policies, leave rules and code of conduct.', fileName:'handbook.pdf', fileType:'application/pdf', fileSize:307200, tags:'HR,policy', uploadedByUsername:'admin', categoryName:'General Documents', createdAt:'2026-01-05T08:00:00' },
+      { id:5, title:'Database Design Notes', description:'Notes on normalisation, indexing and query optimisation.', fileName:'db-notes.txt', fileType:'text/plain', fileSize:15360, tags:'database,SQL', uploadedByUsername:'alice', categoryName:'Research Papers', createdAt:'2025-12-10T11:00:00' },
+      { id:6, title:'Brand Logo Assets', description:'Official logo files in various formats for marketing use.', fileName:'logos.png', fileType:'image/png', fileSize:2097152, tags:'design,brand,logo', uploadedByUsername:'bob', categoryName:'General Documents', createdAt:'2025-11-22T16:00:00' },
+    ];
+
+    /* ==========================================================
+       STATE — all active filter values live here
+    ========================================================== */
+    const state = {
+      keyword: '', categoryId: null, fileType: '',
+      page: 0, size: 9, sortBy: 'createdAt', sortDir: 'desc', totalPages: 0,
+      usingMock: false,   // true when backend is unreachable
+    };
+
+    /* ==========================================================
+       SESSION HELPERS
+    ========================================================== */
+    function getToken()   { return localStorage.getItem('drp_token'); }
+    function getUser()    { const r = localStorage.getItem('drp_user'); return r ? JSON.parse(r) : null; }
+    function isLoggedIn() { return !!getToken(); }
+    function logout() {
+      localStorage.removeItem('drp_token');
+      localStorage.removeItem('drp_user');
+      window.location.href = 'login.html';
+    }
+
+    /* ==========================================================
+       NAVBAR
+    ========================================================== */
+    function setupNavbar() {
+      const user = getUser();
+      if (!user) return;
+      document.getElementById('nav-login').classList.add('hidden');
+      document.getElementById('nav-user').classList.remove('hidden');
+      document.getElementById('nav-upload').classList.remove('hidden');
+      document.getElementById('nav-avatar').textContent = user.username.charAt(0).toUpperCase();
+      document.getElementById('nav-username').textContent = user.username;
+      if (user.role === 'ADMIN') {
+        document.getElementById('nav-admin-users').classList.remove('hidden');
+        document.getElementById('nav-admin-cats').classList.remove('hidden');
+        document.getElementById('nav-admin-logs').classList.remove('hidden');
+      }
+    }
+
+    function toggleDropdown() {
+      document.getElementById('user-dropdown').classList.toggle('open');
+    }
+    document.addEventListener('click', function(e) {
+      if (!e.target.closest('.dropdown')) {
+        document.getElementById('user-dropdown')?.classList.remove('open');
+      }
+    });
+
+    /* ==========================================================
+       TOAST
+    ========================================================== */
+    function showToast(message, type) {
+      type = type || 'info';
+      const el = document.createElement('div');
+      el.className = 'toast toast-' + type;
+      el.textContent = message;
+      document.getElementById('toast-container').appendChild(el);
+      setTimeout(function() {
+        el.style.opacity = '0'; el.style.transition = 'opacity 0.2s';
+        setTimeout(function() { el.remove(); }, 220);
+      }, 3000);
+    }
+
+    /* ==========================================================
+       STATUS BANNER — shown when backend is down
+    ========================================================== */
+    function showBanner(message, type) {
+      const banner = document.getElementById('status-banner');
+      const dot    = document.getElementById('status-dot');
+      document.getElementById('status-msg').textContent = message;
+      banner.className = 'status-banner ' + type;   // 'warn' or 'error'
+      dot.className    = 'status-dot ' + (type === 'warn' ? 'mock' : 'offline');
+    }
+
+    function hideBanner() {
+      document.getElementById('status-banner').classList.add('hidden');
+    }
+
+    /* ==========================================================
+       API FETCH WITH FALLBACK
+       1. Try the real backend
+       2. If it fails with a network error → switch to mock data
+       3. Show a yellow banner so the developer knows what's happening
+    ========================================================== */
+    async function apiFetch(path) {
+      const headers = { 'Content-Type': 'application/json' };
+      const token = getToken();
+      if (token) headers['Authorization'] = 'Bearer ' + token;
+
+      try {
+        const res  = await fetch(API_BASE + path, { headers });
+        const json = await res.json();
+
+        if (res.status === 401) { logout(); throw new Error('Session expired'); }
+        if (!res.ok) throw new Error(json.message || 'Request failed (' + res.status + ')');
+
+        // If we get here, the backend responded successfully
+        state.usingMock = false;
+        hideBanner();
+        return json;
+
+      } catch (err) {
+        // "Failed to fetch" = network error = backend not running OR CORS blocked
+        if (err.message === 'Failed to fetch' || err.name === 'TypeError') {
+          state.usingMock = true;
+          showBanner(
+            '⚠️  Cannot reach backend (localhost:8080). Showing sample data so you can still see the UI. Start your Spring Boot app to use real data.',
+            'warn'
+          );
+          // Return null — caller will use mock data instead
+          return null;
+        }
+        // Any other error (e.g. 400, 500) — show it but don't switch to mock
+        throw err;
+      }
+    }
+
+    /* ==========================================================
+       LOAD CATEGORIES
+       Tries the API first; falls back to MOCK_CATEGORIES
+    ========================================================== */
+    async function loadCategories() {
+      const res = await apiFetch('/categories');
+
+      // Use real data if available, otherwise use the mock array
+      const categories = res ? res.data : MOCK_CATEGORIES;
+
+      const container = document.getElementById('category-list');
+      container.innerHTML = '';
+      categories.forEach(function(cat) {
+        const btn = document.createElement('button');
+        btn.className = 'cat-btn';
+        btn.textContent = cat.name;
+        btn.onclick = function() { selectCategory(cat.id, btn); };
+        container.appendChild(btn);
+      });
+    }
+
+    /* ==========================================================
+       LOAD RESOURCES
+       Tries the API; falls back to filtering MOCK_RESOURCES in JS
+    ========================================================== */
+    async function loadResources() {
+      showSkeletons();
+
+      const params = new URLSearchParams({
+        page: state.page, size: state.size,
+        sortBy: state.sortBy, sortDir: state.sortDir,
+      });
+      if (state.keyword)    params.set('keyword',    state.keyword);
+      if (state.categoryId) params.set('categoryId', state.categoryId);
+      if (state.fileType)   params.set('fileType',   state.fileType);
+
+      const res = await apiFetch('/resources?' + params.toString());
+
+      if (res) {
+        // ── Real backend response ──
+        state.totalPages = res.data.totalPages;
+        renderCards(res.data.content, res.data.totalElements);
+        renderPagination(res.data.totalPages);
+      } else {
+        // ── Mock fallback: filter the local array ourselves ──
+        let filtered = MOCK_RESOURCES.filter(function(r) {
+          const kw = state.keyword.toLowerCase();
+          const matchKeyword = !kw ||
+            r.title.toLowerCase().includes(kw) ||
+            (r.description || '').toLowerCase().includes(kw) ||
+            (r.tags || '').toLowerCase().includes(kw);
+          const matchCat  = !state.categoryId || String(r.id) === String(state.categoryId) ||
+                            MOCK_CATEGORIES.find(c => c.id === state.categoryId && c.name === r.categoryName);
+          const matchType = !state.fileType || r.fileType === state.fileType;
+          return matchKeyword && matchCat && matchType;
+        });
+
+        // Sort
+        filtered.sort(function(a, b) {
+          if (state.sortBy === 'title') {
+            return state.sortDir === 'asc'
+              ? a.title.localeCompare(b.title)
+              : b.title.localeCompare(a.title);
+          }
+          return state.sortDir === 'asc'
+            ? new Date(a.createdAt) - new Date(b.createdAt)
+            : new Date(b.createdAt) - new Date(a.createdAt);
+        });
+
+        state.totalPages = 1;
+        renderCards(filtered, filtered.length);
+        renderPagination(1);
+      }
+    }
+
+    /* ==========================================================
+       UI HELPERS
+    ========================================================== */
+    function showSkeletons() {
+      const grid = document.getElementById('cards-grid');
+      grid.innerHTML = '';
+      for (var i = 0; i < 6; i++) {
+        grid.innerHTML += `
+          <div class="skeleton-card">
+            <div class="skeleton-line" style="height:16px;width:60%"></div>
+            <div class="skeleton-line" style="height:13px;width:85%"></div>
+            <div class="skeleton-line" style="height:13px;width:70%"></div>
+            <div class="skeleton-line" style="height:28px;width:100%;margin-top:0.5rem"></div>
+          </div>`;
+      }
+      document.getElementById('results-count').textContent = 'Loading…';
+      document.getElementById('pagination').innerHTML = '';
+    }
+
+    function doSearch() {
+      state.keyword  = document.getElementById('search-input').value.trim();
+      state.fileType = document.getElementById('filetype-select').value;
+      state.page = 0;
+      const s = document.getElementById('sort-select').value.split('|');
+      state.sortBy = s[0]; state.sortDir = s[1];
+      loadResources();
+    }
+
+    function selectCategory(id, btn) {
+      state.categoryId = id; state.page = 0;
+      document.querySelectorAll('.cat-btn').forEach(function(b) { b.classList.remove('active'); });
+      btn.classList.add('active');
+      loadResources();
+    }
+
+    function clearFilters() {
+      state.keyword = ''; state.categoryId = null; state.fileType = ''; state.page = 0;
+      document.getElementById('search-input').value = '';
+      document.getElementById('filetype-select').value = '';
+      document.querySelectorAll('.cat-btn').forEach(function(b) { b.classList.remove('active'); });
+      document.querySelector('.cat-btn').classList.add('active');
+      loadResources();
+    }
+
+    function goToPage(n) {
+      state.page = n; loadResources();
+      document.querySelector('.page-wrap').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    /* ==========================================================
+       RENDER CARDS
+    ========================================================== */
+    function renderCards(resources, total) {
+      const grid = document.getElementById('cards-grid');
+      grid.innerHTML = '';
+      document.getElementById('results-count').innerHTML =
+        '<strong>' + total + '</strong> resource' + (total !== 1 ? 's' : '') + ' found' +
+        (state.usingMock ? ' <span style="color:var(--hint);font-size:0.75rem">(sample data)</span>' : '');
+
+      if (resources.length === 0) {
+        grid.innerHTML = `<div class="empty"><div class="empty-icon">📭</div><h3>No resources found</h3><p>Try a different search term or clear the filters.</p></div>`;
+        return;
+      }
+
+      resources.forEach(function(r) {
+        const date = new Date(r.createdAt).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
+        const size = r.fileSize < 1048576 ? Math.round(r.fileSize/1024) + ' KB' : (r.fileSize/1048576).toFixed(1) + ' MB';
+        const card = document.createElement('div');
+        card.className = 'resource-card';
+        card.onclick = function() { window.location.href = 'resource.html?id=' + r.id; };
+        card.innerHTML = `
+          <div class="card-top">
+            <span class="file-badge ${getBadgeClass(r.fileType)}">${getTypeLabel(r.fileType)}</span>
+            <span class="card-date">${date}</span>
+          </div>
+          <div class="card-title">${esc(r.title)}</div>
+          ${r.description ? `<div class="card-desc">${esc(r.description)}</div>` : ''}
+          ${r.categoryName ? `<div><span class="cat-tag">${esc(r.categoryName)}</span></div>` : ''}
+          <div class="card-footer">
+            <div class="uploader">
+              <div class="uploader-avatar">${r.uploadedByUsername.charAt(0)}</div>
+              <span>${esc(r.uploadedByUsername)}</span>
+              <span style="color:var(--hint)">· ${size}</span>
+            </div>
+            <div class="card-actions">
+              <button class="icon-btn" title="Download"
+                onclick="event.stopPropagation(); downloadFile(${r.id}, '${esc(r.fileName)}')">
+                <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
+                  <path d="M8 2v8M5 7l3 3 3-3M3 13h10" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </button>
+            </div>
+          </div>`;
+        grid.appendChild(card);
+      });
+    }
+
+    /* ==========================================================
+       RENDER PAGINATION
+    ========================================================== */
+    function renderPagination(totalPages) {
+      const c = document.getElementById('pagination');
+      c.innerHTML = '';
+      if (totalPages <= 1) return;
+
+      const prev = document.createElement('button');
+      prev.className = 'page-btn'; prev.textContent = '←';
+      prev.disabled = state.page === 0;
+      prev.onclick = function() { goToPage(state.page - 1); };
+      c.appendChild(prev);
+
+      for (var i = 0; i < totalPages; i++) {
+        const btn = document.createElement('button');
+        btn.className = 'page-btn' + (i === state.page ? ' active' : '');
+        btn.textContent = i + 1;
+        btn.onclick = (function(p) { return function() { goToPage(p); }; })(i);
+        c.appendChild(btn);
+      }
+
+      const next = document.createElement('button');
+      next.className = 'page-btn'; next.textContent = '→';
+      next.disabled = state.page >= totalPages - 1;
+      next.onclick = function() { goToPage(state.page + 1); };
+      c.appendChild(next);
+    }
+
+    /* ==========================================================
+       DOWNLOAD
+    ========================================================== */
+    async function downloadFile(id, fileName) {
+      if (state.usingMock) { showToast('Download unavailable in demo mode', 'info'); return; }
+      showToast('Starting download…', 'info');
+      try {
+        const res = await fetch(API_BASE + '/resources/' + id + '/download', {
+          headers: getToken() ? { 'Authorization': 'Bearer ' + getToken() } : {}
+        });
+        if (!res.ok) throw new Error('Download failed');
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = fileName; a.click();
+        URL.revokeObjectURL(url);
+        showToast('Download started!', 'success');
+      } catch (err) {
+        showToast('Download failed: ' + err.message, 'error');
+      }
+    }
+
+    /* ==========================================================
+       TINY HELPERS
+    ========================================================== */
+    function getTypeLabel(m) {
+      return { 'application/pdf':'PDF', 'application/msword':'DOC',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document':'DOCX',
+        'text/plain':'TXT', 'image/jpeg':'JPG', 'image/png':'PNG' }[m] || 'FILE';
+    }
+
+    function getBadgeClass(m) {
+      if (m === 'application/pdf') return 'badge-pdf';
+      if (m && m.includes('word')) return 'badge-doc';
+      if (m === 'text/plain')      return 'badge-txt';
+      if (m && m.startsWith('image/')) return 'badge-img';
+      return 'badge-file';
+    }
+
+    function esc(s) {
+      if (!s) return '';
+      return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    /* Enter key triggers search */
+    document.getElementById('search-input').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') doSearch();
+    });
+
+    /* ==========================================================
+       INIT
+    ========================================================== */
+    setupNavbar();
+    loadCategories();
+    loadResources();
+  </script>
+
+</body>
+</html>

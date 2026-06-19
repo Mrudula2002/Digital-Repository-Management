@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Create Account — DRP</title>
+
+<style>
+
+*,*::before,*::after{
+box-sizing:border-box;
+margin:0;
+padding:0;
+}
+
+body{
+font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+display:flex;
+align-items:center;
+justify-content:center;
+min-height:100vh;
+padding:1.5rem;
+background:#0f0e1a;
+overflow:hidden;
+color:white;
+}
+
+.bg-blobs{
+position:fixed;
+inset:0;
+z-index:0;
+pointer-events:none;
+}
+
+.blob{
+position:absolute;
+border-radius:50%;
+filter:blur(80px);
+opacity:0.35;
+animation:float 8s ease-in-out infinite;
+}
+
+.blob-1{
+width:420px;
+height:420px;
+background:#534AB7;
+top:-10%;
+left:-5%;
+}
+
+.blob-2{
+width:320px;
+height:320px;
+background:#1D9E75;
+top:50%;
+right:-8%;
+animation-delay:2s;
+}
+
+.blob-3{
+width:260px;
+height:260px;
+background:#D85A30;
+bottom:-5%;
+left:30%;
+animation-delay:4s;
+}
+
+@keyframes float{
+0%,100%{
+transform:translateY(0) scale(1);
+}
+50%{
+transform:translateY(-30px) scale(1.05);
+}
+}
+
+.register-wrap{
+position:relative;
+z-index:1;
+width:100%;
+max-width:400px;
+}
+
+.login-logo{
+display:flex;
+align-items:center;
+justify-content:center;
+gap:.6rem;
+margin-bottom:1.5rem;
+}
+
+.brand-icon-lg{
+width:44px;
+height:44px;
+background:linear-gradient(135deg,#534AB7,#7F77DD);
+border-radius:12px;
+display:flex;
+align-items:center;
+justify-content:center;
+font-weight:800;
+box-shadow:0 4px 20px rgba(83,74,183,.5);
+}
+
+.logo-text strong{
+display:block;
+font-size:1.1rem;
+}
+
+.logo-text span{
+font-size:.7rem;
+opacity:.5;
+}
+
+.register-card{
+background:rgba(255,255,255,.06);
+backdrop-filter:blur(20px);
+border:1px solid rgba(255,255,255,.12);
+border-radius:20px;
+padding:2rem;
+}
+
+.register-card h1{
+margin-bottom:.3rem;
+}
+
+.sub{
+font-size:.85rem;
+opacity:.5;
+margin-bottom:1.5rem;
+}
+
+input{
+width:100%;
+padding:.8rem;
+margin-bottom:1rem;
+background:rgba(255,255,255,.07);
+border:1px solid rgba(255,255,255,.15);
+border-radius:10px;
+color:white;
+outline:none;
+}
+
+input::placeholder{
+color:rgba(255,255,255,.3);
+}
+
+input:focus{
+border-color:#7F77DD;
+box-shadow:0 0 0 3px rgba(127,119,221,.25);
+}
+
+button{
+width:100%;
+padding:.8rem;
+background:linear-gradient(
+135deg,
+#534AB7,
+#7F77DD
+);
+
+border:none;
+border-radius:10px;
+color:white;
+font-weight:600;
+cursor:pointer;
+margin-top:.5rem;
+}
+
+button:hover{
+opacity:.9;
+}
+
+.login-link{
+text-align:center;
+margin-top:1rem;
+font-size:.85rem;
+color:rgba(255,255,255,.5);
+}
+
+.login-link a{
+color:#7F77DD;
+font-weight:600;
+text-decoration:none;
+}
+
+.login-link a:hover{
+text-decoration:underline;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="bg-blobs">
+<div class="blob blob-1"></div>
+<div class="blob blob-2"></div>
+<div class="blob blob-3"></div>
+</div>
+
+<div class="register-wrap">
+
+<div class="login-logo">
+<div class="brand-icon-lg">DR</div>
+
+<div class="logo-text">
+<strong>Digital Repository</strong>
+<span>Platform</span>
+</div>
+
+</div>
+
+<div class="register-card">
+
+<h1>Create Account ✨</h1>
+
+<p class="sub">
+Join DRP and start managing resources
+</p>
+
+<form id="registerForm">
+
+<input
+type="text"
+id="username"
+placeholder="Username"
+required>
+
+<input
+type="email"
+id="email"
+placeholder="Email"
+required>
+
+<input
+type="password"
+id="password"
+placeholder="Password"
+required>
+
+<button type="submit">
+Create Account
+</button>
+
+</form>
+
+<p class="login-link">
+
+Already have an account?
+
+<a href="login.html">
+Sign In
+</a>
+
+</p>
+
+</div>
+
+</div>
+
+<script src="register.js"></script>
+
+</body>
+</html>
